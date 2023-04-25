@@ -1,9 +1,12 @@
 #Seurat downstream analysis - BASIC WORKFLOW - 2023-03
 #
 #
-#Setting the seed to allow reproducibility in terms of UMAPs 
-#(Position of cells in UMAPs are somewhat randomly generated so by setting a seed the cells are always in the same position when you have to redo the analysis,
-#so you get reproducable plots)
+#This is the basic workflow for the analysis of the paper Satija et al. 2023
+#
+#This workflow was performed on each data set separately until MMRM
+#
+#
+#Setting the seed to allow reproducibility in terms of UMAPs
 set.seed(10403)
 
 #Load packages we need####
@@ -14,35 +17,30 @@ library(ggplot2)
 library(ggpubr)
 library(DoubletFinder)
 library(clustree)
+library(scCustomize)
 
 #Loading the dataset####
-#We first need to load the ouput after running 10x cellranger and create a "SeuratObject"
-#The data.dir path is the directory that contain the files "matrix.mtx","features.tsv", and "barcodes.tsv"
-#So we first load them into RStudio and then create our "SeuratObject"
 
 seurat.object <- Read10X(data.dir = "path/to/filtered_feature_bc_matrix/") 
 seurat.object <- CreateSeuratObject(counts = seurat.object, project = "NAME")
 
 #Mitochondrial gene percentage#####
-##We then calculate the percentage of mitochondrial genes and visualize this in a violin plot
-##If you used a 10x reference that contains both human and mouse genes, make sure you define the right prefixes for each calculations
+##Our custom reference was was made using the 10x reference that contains both human and mouse genes,
+#therefore we can calculate both mitochondrial gene percentages
 
 seurat.object$mitoHuCH38Percent <- PercentageFeatureSet(seurat.object, pattern='*-MT-') #Calculating human mitochondrial gene percentage
 seurat.object$mitoMM10Percent <- PercentageFeatureSet(seurat.object, pattern='*-mt-') #Calculating mouse mitochondrial gene percentage
 
 #Violin Plots######
 #This shows the violin plot for the four categories
-#Based on this we can already decide what QC cutoffs we want to use later since they are individual for all datasets
 VlnPlot(seurat.object, features=c("nCount_RNA","mitoMM10Percent","mitoHuCH38Percent","nFeature_RNA")) 
 
 #Scatter Plots####
-#We can also look at this using scatter plots, which can also be insightfull when deciding on thresholds
 FeatureScatter(seurat.object, feature1 = "nCount_RNA", feature2 = "mitoHuCH38Percent")
 FeatureScatter(seurat.object, feature1 = "nCount_RNA", feature2 = "mitoMM10Percent")
 FeatureScatter(seurat.object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
 
-##At this point you decide on upper thresholds for "nCount_RNA" and "mitoPercentage"
-##This is individual for each dataset
+#The individual threshold values can be found
 
 #Metadata######
 ##Add some meta.data to our dataset

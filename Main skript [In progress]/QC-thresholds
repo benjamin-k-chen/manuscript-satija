@@ -1,0 +1,36 @@
+Threshold values for each dataset which were decided upon in the initial QC workflow. By observing nFeature_RNA counts and % of human mitochondrial genes:
+
+- nFeature_RNA>200
+- nFeature_RNA<
+27M1= 6000
+297_count = 5000
+31M1 = 4500
+368_count = 3000
+439_count = 4000
+440_count = 5000,
+               609_count" = 6500,
+               610_count" = 6000,
+               611_count" = 7000,
+                 "612_count" = 6500,
+                 "618_count" = 4500,
+                 "619_count" = 7000,
+                 "620_count" = 5000,
+                 "621_count" = 7500,
+                 "622_count" = 7500)
+
+datasetsHumanMito<-c("27M1"= 15,
+                     "297_count" = 10,
+                     "31M1" = 15,
+                     "368_count" = 5,
+                     "439_count" = 5,
+                     "440_count" = 15,
+                     "609_count" = 15,
+                     "610_count" = 15,
+                     "611_count" = 15,
+                     "612_count" = 15,
+                     "618_count" = 5,
+                     "619_count" = 15,
+                     "620_count" = 5,
+                     "621_count" = 15,
+                     "622_count" = 15)
+
