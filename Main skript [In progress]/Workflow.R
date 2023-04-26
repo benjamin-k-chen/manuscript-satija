@@ -1,9 +1,8 @@
-#Seurat downstream analysis - BASIC WORKFLOW - 2023-03
+#Seurat downstream analysis - BASIC WORKFLOW
 #
 #
-#This is the basic workflow for the analysis of the paper Satija et al. 2023
+#This is the basic workflow for the analysis of the paper Satija et al. (2023)
 #
-#This workflow was performed on each data set separately until MMRM
 #
 #
 #Setting the seed to allow reproducibility in terms of UMAPs
@@ -331,30 +330,12 @@ for(i in 1:length(seurat.list)){
                  scale_y_continuous(labels = scales::percent)+theme_bw()+theme(axis.text.x = element_text(hjust=1,angle=45)), tbl,ncol=2,as.table=TRUE,heights=c(2,1))
 }
 
-
-
 #Preparing for multimodal reference mapping - Removing the "GRCh38-" gene prefix#####
 
-#To be able to accurately do perform the multimodal reference mapping the gene names in both the reference and our dataset should match
-#Since we used the 10X cellranger reference with both mouse and human genome we have to take the prefix out of the dataset
-#We will create the function "RenameGeneseurat" that replaces the gene names (rownames within defined slots of the object)
-
-RenameGenesseurat <- function(obj = seurat.object, newnames = updated.gene.names) { # Replace gene names in different slots of a seurat object. Run this before any type of integration. It only changes obj@assays$RNA@counts, @data and @scale.data.
-  print("Run this before integration. It only changes obj@assays$RNA@counts, @data")
-  RNA <- obj@assays$RNA
-  if (nrow(RNA) == length(newnames)) {
-    if (length(RNA@counts)) RNA@counts@Dimnames[[1]]            <- newnames
-    if (length(RNA@data)) RNA@data@Dimnames[[1]]                <- newnames
-  } else {"Unequal gene sets: nrow(RNA) != nrow(newnames)"}
-  obj@assays$RNA <- RNA
-  return(obj)
+for(i in 1:length(seurat.list)){
+  updated.gene.names <- str_remove_all(rownames(seurat.list[[i]]@assays$RNA),"GRCh38-")
+  seurat.list[[i]] <- RenameGenesseurat(obj = seurat.list[[i]], newnames = updated.gene.names)
 }
-
-#Apply the function to our SeuratObject
-updated.gene.names <- str_remove_all(rownames(seurat.object@assays$RNA),"GRCh38-") #Making a vector of the gene names without the prefix
-
-#Applying the function
-seurat.object <- RenameGenesseurat(obj = seurat.object, newnames = updated.gene.names)
 
 #Multimodal reference mapping####
 #In thispart, we map our datasets to a CITE-seq reference of 162,000 PBMC measured with 228 antibodies released by Satija Lab. 
@@ -362,260 +343,362 @@ seurat.object <- RenameGenesseurat(obj = seurat.object, newnames = updated.gene.
 #https://www.sciencedirect.com/science/article/pii/S0092867421005833?via%3Dihub (the link to the paper)
 #
 #
-#Similar to DoubletFinder we will first create a copy of our object to which we will later add the predicted.celltypes
-seurat.object.original<-seurat.object
+#Merging based on SampleType and mm-reference mapping#####
 
-#SCT normalizing the dataset
-seurat.object <- SCTransform(seurat.object)
+#Make a safety copy of the untransformed unmerged list of seurat.objects
+seurat.list.untrans.individual <- seurat.list
+
+for(i in 1:length(seurat.list)){
+  assign(unique(seurat.list[[i]]$Count),seurat.test <- seurat.list[[i]])
+}
+
+batch1list<-ls(pattern=datasetsBatch1)
+batch1<-lapply(batch1list,get) #15dpi counts #n=7
+batch1<-Merge_Seurat_List(batch1,add.cell.ids = NULL)
+
+batch2list<-ls(pattern=datasetsBatch2)
+batch2<-lapply(batch2list,get) #10dpt+29dpt n=4
+batch2<-Merge_Seurat_List(batch2,add.cell.ids = NULL)
+
+batch3list<-ls(pattern=datasetsBatch3)
+batch3<-lapply(batch3list,get) #Uninfected n=4
+batch3<-Merge_Seurat_List(batch3,add.cell.ids = NULL)
+
+rm(batch1list,batch2list,batch3list)
+
+list <-ls(pattern="^batch")
+
+seurat.list<-lapply(list,get)
+
+remove(list=ls(pattern = "^batch"))
+remove(list=ls(pattern = "_count"))
+
+###SCT Transform each Merge separately
+seurat.list <- lapply(X = seurat.list, FUN = SCTransform)
 
 #Loading the citeseq - reference
-reference <- LoadH5Seurat(file = "/Path/to/the/h5/file")
+reference <- LoadH5Seurat(file = referencePath)
 
 #Find transfer anchors between reference dataset and our seurat object
-
-anchors <- FindTransferAnchors(reference = reference,query = seurat.object,
-                               normalization.method = "SCT",
-                               reference.reduction = "spca",
-                               query.assay = "RNA",
-                               dims = 1:50) #We chose 50 dimension, but you can adjust that to your dataset as you like
-
 #Mapping the cell identities from the reference to the seurat object
-seurat.object <- MapQuery(anchorset = anchors,
-                          query = seurat.object,
-                          reference = reference,
-                          refdata = list(celltype.l1 = "celltype.l1",celltype.l2 = "celltype.l2",predicted_ADT = "ADT"),
-                          reference.reduction = "spca",
-                          reduction.model = "wnn.umap")
 
-#We can display our cells in the UMAP of the reference dataset
-DimPlot(seurat.object, reduction = "ref.umap",
-        group.by = "predicted.celltype.l1",
-        label = TRUE, label.size = 3, repel = TRUE)
-    
-DimPlot(seurat.object, reduction = "ref.umap",
-        group.by = "predicted.celltype.l2", 
-        label = TRUE, label.size = 3, repel = TRUE)
+for(i in 1:length(seurat.list)){
+  if(ncol(seurat.list[[i]]) < 50){print("Less than 50 cells - not enough cells for multimodal reference mapping")}
+  else{
+    anchors <- FindTransferAnchors(reference = reference,query = seurat.list[[i]],normalization.method = "SCT",reference.reduction = "spca",query.assay = "RNA",dims = 1:50)
+    seurat.list[[i]] <- MapQuery(anchorset = anchors,query = seurat.list[[i]],reference = reference,refdata = list(celltype.l1 = "celltype.l1",celltype.l2 = "celltype.l2",predicted_ADT = "ADT"),reference.reduction = "spca",reduction.model = "wnn.umap")
+    rm(anchors)
+    show(DimPlot(seurat.list[[i]], reduction = "ref.umap", group.by = "predicted.celltype.l1", label = TRUE, label.size = 3, repel = TRUE, shape.by = "Count"))
+    show(DimPlot(seurat.list[[i]], reduction = "ref.umap", group.by = "predicted.celltype.l2", label = TRUE, label.size = 3, repel = TRUE, shape.by = "Count"))
+    table1<-seurat.list[[i]]@meta.data%>%dplyr::count(predicted.celltype.l1)
+    table2<-seurat.list[[i]]@meta.data%>%dplyr::count(predicted.celltype.l2)
+    tbl1<-tableGrob(table1,rows=NULL,theme=tt)
+    tbl2<-tableGrob(table2,rows=NULL,theme=tt)
+    grid.arrange(ggplot(seurat.list[[i]]@meta.data,aes(x=Count, fill=predicted.celltype.l1)) + geom_bar(position="fill")+
+                   scale_y_continuous(labels = scales::percent)+theme_bw()+theme(axis.text.x = element_text(hjust=1,angle=45)), tbl1,ncol=2,as.table=TRUE,heights=c(2,1))
+    grid.arrange(ggplot(seurat.list[[i]]@meta.data,aes(x=Count, fill=predicted.celltype.l2)) + geom_bar(position="fill")+
+                   scale_y_continuous(labels = scales::percent)+theme_bw()+theme(axis.text.x = element_text(hjust=1,angle=45)), tbl2,ncol=2,as.table=TRUE,heights=c(2,1))
+  }
+}
 
-#Let's make tables looking at the number of predicted celltypes
 
-#Level 1 - Cell Types
-table1<-seurat.object@meta.data%>%dplyr::count(predicted.celltype.l1)
+rm(reference) #Its a big object and we don't need it anymore beyond this point
 
-#Level 2 - Cell Types
-table2<-seurat.object@meta.data%>%dplyr::count(predicted.celltype.l2)
+#Extract predicted.celltypes and add to untr. objects####
 
-#After this we can remove the reference to clean up the R enviroment
-rm(reference)
+#We're now merging all batches int one big SeuratObject to extract all the predicted.celltypes at the same time
+#Seurat will automatically add individual suffixes to the cells which we will have to remove later on
 
-#We don't need the normalization and PCA/UMAP anymore so we take the meta.data and add it to the copy of seurat.object
+seuratrefmapped.merged<-Merge_Seurat_List(list_seurat = seurat.list,add.cell.ids = NULL)
 
-Celltypes.after.mm <- FetchData(seurat.object, vars = c('predicted.celltype.l1','predicted.celltype.l2'), slot="counts") #In this table the cell.barcodes are the rownames, those are matching to the copy and are used to match the meta.data to the right cell
+celltypes.after.mm <- FetchData(seuratrefmapped.merged, vars = c('predicted.celltype.l1', 'predicted.celltype.l2','Count','SampleType','predicted.celltype.l1.score','predicted.celltype.l2.score'), slot="counts")
 
-seurat.object.original<-AddMetaData(seurat.object.original,Celltypes.after.mm) #The automatic column name will be the column name of the table
+rm(seuratrefmapped.merged)
 
-#We can now safely remove the SeuratObject we don't need by overwriting them
+#We split the celltypes.after.mm table and set the CellIDs as rownames -> we can't use the default rownames, since those are with added suffixes
+#so we need to remove that first before we can add metadata to the untransformed datasets
 
-seurat.object<-seurat.object.original
+celltypes.after.mm.split <-split(celltypes.after.mm,celltypes.after.mm$Count)
+for (i in 1:length(celltypes.after.mm.split)) {
+  celltypes.after.mm.split[[i]]$cell.id<-substr(rownames(celltypes.after.mm.split[[i]]),1,18)
+  rownames(celltypes.after.mm.split[[i]]) <- celltypes.after.mm.split[[i]]$cell.id
+}
 
-rm(seurat.object.original)
+##Adds the predicted.celltype.l1 and l2 as metadata (technically we also add Count and SampleType, but those just get replaced with the same thing)
+
+for (i in 1:length(seurat.list.untrans.individual)) {
+  seurat.list.untrans.individual[[i]]<-AddMetaData(seurat.list.untrans.individual[[i]],celltypes.after.mm.split[[i]])
+}
+
+
+##The non-normalized individual datasets now include predicted celltypes as meta.data
+##Based on mapping to the cite-seq reference from the Satija Lab reference dataset
+##For the rest of the workflow we chose to merge datasets into seurat.list based on mouse/or type of sample type
+#thereby minimizing batch effects
 
 #Normalization####
-#At this point we follow the basic Seurat workflow released by Satija Lab
-#https://satijalab.org/seurat/articles/pbmc3k_tutorial.html#normalizing-the-data-1
-#When doing SCT-transform we don't need to perform Normalize/ScaleData anymore (unless when performing a JackStraw)
+#SCT transform the batches
 
-seurat.object<-SCTransform(seurat.object,vars.to.regress = c("mitoHuCH38Percent","mitoMM10Percent"))
+for (i in 1:length(seurat.list)) {
+  seurat.list[[i]]<-SCTransform(seurat.list[[i]],vars.to.regress = c("mitoHuCH38Percent","mitoMM10Percent"))
+}
 
-#Identification of highly variable features####
-#We calculate a subset of features that a high high cell-to-cell variation in the dataset
-#(i.e, they are highly expressed in some cells, and lowly expressed in others)
-#Focusing on these genes in downstream analysis helps to highlight biological signal scRNA datasets.
+#JackStraw and Elbow Plot
 
-seurat.object<-FindVariableFeatures(seurat.object,selection.method = "vst",nfeatures = 2000)
-
-#Take the top10 most highly variable genes in the dataset
-top10<- head(VariableFeatures(seurat.object),10)
-
-#Then we plot these genes in the VariableFeaturePlot
-plot1 <- VariableFeaturePlot(seurat.object)
-plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
-plot1 | plot2
+#JackStraw and 1st.PCA (needed to decide on thresholds)####
+#If we want to do the JackStraw and all that
+#JackStraw
+seurat.list.copy<-seurat.list
 
 
-#JackStraw - Determining the dimensionality of the dataset####
-
-#We first make a copy of the dataset
-seurat.object.original<-seurat.object
-
-#Unfortunately the JackStraw workflow doesn't work on our SCT transformed dataset, so we need to change the default assay
-#back to "RNA" (untransformed/unnormalized raw data) and normalize and scale that data using default settings
-
-DefaultAssay(seurat.object) <- "RNA"
-
-#Normalize RNA-assay data
-seurat.object<-NormalizeData(seurat.object)
+for (i in 1:length(seurat.list.copy)){
+    DefaultAssay(seurat.list.copy[[i]]) <- "RNA"
+    print("Performing JackStraw and PCA")
+    #Normalize RNA-assay data
+    seurat.list.copy[[i]]<-NormalizeData(seurat.list.copy[[i]])
     
-#Scale RNA assay data
-seurat.object<-ScaleData(seurat.object)
-
-#Find variable features
-seurat.object<-FindVariableFeatures(seurat.object)
-
-#We make a variable of the highly variable features and take out the mouse genes - HIV genes - Lenti-RG genes
-#That could have an impact on the PCA and UMAP
-
-featuresUCOERG<- c("dsRed", "EGFP", "WPRE" )
-featuresHIV<- c("gag-pol","pol","pol-vif-vpr-tat-rev","vpu-env","env","mirfp670nano","p2a-cre-ires-nef" ) #This of course depends on the genes defined in your cellranger reference
-
-#
-features <- VariableFeatures(seurat.object)
-features <- setdiff(features,featuresHIV) #Taking out the HIV genes in the list of highly variable genes
-mouse.genes<-str_subset(features,pattern = "mm10") #Making a list of the genes that are highly variable and have the mouse gene prefix
-features <- setdiff(features,mouse.genes) #Taking out the mouse genes in the list of highly variable genes
-features <- setdiff(features,featuresUCOERG) #Taking out the Lenti-RG genes in the list of highly variable genes
+    #Scale RNA assay data
+    seurat.list.copy[[i]]<-ScaleData(seurat.list.copy[[i]])
     
-#RUN a basic PCA
-seurat.object<-RunPCA(seurat.object,features=features,npcs = 45)
+    #Find variabke features
+    seurat.list.copy[[i]]<-FindVariableFeatures(seurat.list.copy[[i]])
+    
+    test.features <- VariableFeatures(seurat.list.copy[[i]])
+    test.features <- setdiff(test.features,featuresHIV)
+    mouse.genes<-str_subset(test.features,pattern = "mm10")
+    test.features <- setdiff(test.features,mouse.genes)
+    test.features <- setdiff(test.features,featuresUCOERG)
+    
+    #RUN PCA
+    if (ncol(seurat.list.copy[[i]]@assays$RNA)<500){
+      print("Datasest contains less than 500 cells - RunPCA with npcs=15")
+      seurat.list.copy[[i]]<-RunPCA(seurat.list.copy[[i]],features=test.features,npcs = 15)
+      print("Datasest contains less than 500 cells - JackStraw with dim=15")
+      seurat.list.copy[[i]] <- JackStraw(seurat.list.copy[[i]], num.replicate =100,dims=15)
+      seurat.list.copy[[i]] <- ScoreJackStraw(seurat.list.copy[[i]], dims =1:15)
+      show(JackStrawPlot(seurat.list.copy[[i]], dims= 1:15)+
+             labs(title = paste0(dplyr::first(seurat.list.copy[[i]]$Count)," n=",ncol(seurat.list.copy[[i]]@reductions$pca))))
+      show(ElbowPlot(seurat.list.copy[[i]],ndims=15)+
+             labs(title = paste0(dplyr::first(seurat.list.copy[[i]]$Count)," n=",ncol(seurat.list.copy[[i]]@reductions$pca))))
+      
+    }
+    
+    else if (ncol(seurat.list.copy[[i]]@assays$RNA) %in% c(500:5000)){
+      print("Dataset contains more than 500 but less than 5000 cells - RunPCA with npcs=35")
+      seurat.list.copy[[i]]<-RunPCA(seurat.list.copy[[i]],features=test.features,npcs = 35)
+      print("Dataset contains more than 500 but less than 5000 cells - JackStraw with dims=30")
+      seurat.list.copy[[i]] <- JackStraw(seurat.list.copy[[i]], num.replicate =100,dims=30)
+      seurat.list.copy[[i]] <- ScoreJackStraw(seurat.list.copy[[i]], dims =1:30)
+      show(JackStrawPlot(seurat.list.copy[[i]], dims= 1:30)+
+             labs(title = paste0(dplyr::first(seurat.list.copy[[i]]$Count)," n=",ncol(seurat.list.copy[[i]]@reductions$pca))))
+      show(ElbowPlot(seurat.list.copy[[i]],ndims=30)+
+             labs(title = paste0(dplyr::first(seurat.list.copy[[i]]$Count)," n=",ncol(seurat.list.copy[[i]]@reductions$pca))))
+    }
+    else if (ncol(seurat.list.copy[[i]]@assays$RNA)>5000){
+      print("Dataset contains more than 5000 cells - RunPCA with npcs=45")
+      seurat.list.copy[[i]]<-RunPCA(seurat.list.copy[[i]],features=test.features,npcs = 45)
+      print("Dataset contains more than 5000 cells - JackStraw with dims=45")
+      seurat.list.copy[[i]] <- JackStraw(seurat.list.copy[[i]], num.replicate =100,dims=45)
+      seurat.list.copy[[i]] <- ScoreJackStraw(seurat.list.copy[[i]], dims =1:45)
+      show(JackStrawPlot(seurat.list.copy[[i]], dims= 1:45)+
+             labs(title = paste0(dplyr::first(seurat.list.copy[[i]]$Count)," n=",ncol(seurat.list.copy[[i]]@reductions$pca))))
+      show(ElbowPlot(seurat.list.copy[[i]],ndims=45)+
+             labs(title = paste0(dplyr::first(seurat.list.copy[[i]]$Count)," n=",ncol(seurat.list.copy[[i]]@reductions$pca))))
+    } 
+    
+}
 
-#Performing a JackStraw
-seurat.object <- JackStraw(seurat.object, num.replicate=100)
-seurat.object <- ScoreJackStraw(seurat.object, dims=1:45)
-
-#Plot the JackStraw results
-JackStrawPlot(seurat.object, dims=1:45)+
-       labs(title = paste0(" n=",ncol(seurat.objects[[i]]@reductions$pca)))
-
-ElbowPlot(seurat.object,ndims=45)+
-       labs(title = paste0("n=",ncol(seurat.object@reductions$pca)))
-
-#These plots allow us to determine the dimensionality of the dataset for the later downstream analysis
-#Here you need to decide on thresholds and mark them down!
+#The chosen thresholds can be found in the supplementary material
 
 
 #Clustree - Determine cluster resolution####
+#Now we're doing the PCA/UMAP/TSNE based on the number of dimensions we determined using the JackStraw/ElbowPlot
+#And look at the clustree plot to determine the correct resolution for the UMAPs
+
 #https://lazappi.github.io/clustree/articles/clustree.html
 #This link will show the documentation for the resulting plot
 #Based on this you can decide the optimal resolution when clustering, to not over/under cluster your cells
 
-#We first make a copy of the dataset
-seurat.object.original<-seurat.object
+datasetsUMAPtbl<-data.frame(datasetsUMAP)
+datasetsUMAPtbl$Count<-rownames(datasetsUMAPtbl)
 
-#We make a range of cluster resolutions
 resolution.range <- seq(from = 0, to = 1, by = 0.1)
 
-#We then again identify the highly variable genes in the dataset and take out Lenti and HIV genes
-features <- VariableFeatures(seurat.object)
-features <- setdiff(features,featuresHIV)
-mouse.genes<-str_subset(features,pattern = "mm10")
-features <- setdiff(features,mouse.genes)
-features <- setdiff(features,featuresUCOERG)
+seurat.list.copy<-seurat.list
 
-#We will have to run a basic PCA and UMAP sung the thresholds we have previously defined (->JackStraw)
-
-seurat.object <- RunPCA(seurat.object,features=test.features)
-seurat.object <- RunUMAP(seurat.object,dims = 1:XX) #Insert the threshold, in place of "XX"
-seurat.object <- FindNeighbors(seurat.object,dims = 1:XX)
-seurat.object <- FindClusters(seurat.object,resolution = resolution.range) 
-
-#Now lets look at the clustertree 
-clustree(seurat.object, prefix = "SCT_snn_res.")
-
-#Now you can decide on the optimal resolution -> Write it down!
-
-#Creating the UMAPs####
-#We can't use the same previous seurat.object so we will overwrite it with the copey we made before running clustree
-seurat.object<-seurat.object.original
-
-seurat.object <- RunPCA(seurat.object,features=test.features)
-seurat.object <- RunUMAP(seurat.object,dims = 1:XX) #Insert the threshold, in place of "XX"
-seurat.object <- FindNeighbors(seurat.object,dims = 1:XX)
-seurat.object <- FindClusters(seurat.object,resolution = YY) #Insert the resolution, in place of "YY"
-
-#Show the UMAP plot
-#We're gonna save four dfferent UMAP plots and them shwo them in one figure
-#In this iteration we have the labels for the colors inside the UMAP and no legend on the right
-#If you want a legend and no labels just remove ",label = TRUE,repel = 10,label.size = " and "+NoLegend()" from the code
-
-p1<-DimPlot(seurat.object,label = TRUE,repel = 10,label.size = 3)+NoLegend()
-p2<-DimPlot(seurat.object,group.by = "ANY META-DATA COLUMN",label = TRUE,repel = 10,label.size = 3)+NoLegend()
-p3<-DimPlot(seurat.object,group.by = "predicted.celltype.l1",label = TRUE,repel = 10,label.size = 3)+NoLegend() 
-p4<-DimPlot(seurat.object,group.by = "predicted.celltype.l2",label = TRUE,repel = 10,label.size = 3)+NoLegend()
-
-ggarrange(p1,p2,p3,p4,ncol=2,nrow = 2)
-
-#You can also manually define colors and use them in the display of your UMAP
-#e.g.:
-HIV.cols <- c('HIV-'='lightgrey','HIV+ low'="#ffd8b1",'HIV+ high'= "purple",'HIV+ very high'="purple") 
-#There are predefined colors in R of which you can just type in the name or you can use custom colors using the Hexcode "#000000"
-#Each name matches one of the definitions on our meta.data column
-#With adding "cols=___" in DimPlot() you can define your colors
-DimPlot(seurat.object,group.by = "ANY META DATA COLUMN",label = TRUE,repel = 10,label.size = 3,cols = HIV.cols)+NoLegend()
-
-#Creating HeatMaps with top10 marker genes per cluster####
-#Heatmaps are created by comparing all the cluster to one another and identifying defininig marker genes for each
-
-seurat.object.markers <- FindAllMarkers(seurat.object) #We will then again remove the HIV and Lenti-RG genes from this list of markers
-mousemarkers<-str_subset(seurat.object$gene,pattern = "mm10")
-seurat.object.markers<-seurat.object.markers[!seurat.object.markers$gene %in% mousemarkers,]
-seurat.object.markers<-seurat.object.markers[!seurat.object.markers$gene %in% featuresHIV,]
-seurat.object.markers<-seurat.object.markers[!seurat.object.markers$gene %in% featuresUCOERG,]
-
-#Now we're only taking the top10 markers in each cluster
-seurat.object.markers.top10 <- seurat.object.markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
-
-#Show Heatmap
-DoHeatmap(seurat.object, features = seurat.object.markers.top10$gene,size = 3)
-
-#Now you can look at the heatmap with the marker genes for each cluster in your dataset
-#Ideally you should have a descending stair shape
-#If not you might have to go back a couple steps and troubleshoot
-#This Heatmap is also incredibly helpful if you want to identify your own celltypes not based on reference mapping
-#In that case you have to go through the top markers for each cluster manually and use that top10 list to find distinctive gene markers based on literature
-
-#FeaturePlots#####
-##Another way to look at your UMAPs is by looking at the expression of certain cell type markers in your cells
-#We made a defined list of cellmarker genes at which we wan to look at
-#You can obviously adjust that list to your liking - depending on what celltypes you expect in your dataset
-
-#T.cell("CD3D","CD3E","CD3G","TRAC") B.cell("CD19","MS4A1") NK.cells("KLRF1") MonoCD14CD16("CD14","FCGR3A")
-cellmarker.features<-c("CD3D","CD3E","CD3G","TRAC","CD19","MS4A1","KLRF1","CD14","FCGR3A")
-
-#Plot the expression in a 'FeaturePLot'
-FeaturePlot(seurat.object,features = cellmarker.features)
-
-#You can also look at the expression levels of these genes in a violin plot
-
-VlnPlot(seurat.object,features = cellmarker.features) #Grouped by seurat defined clusters
-
-VlnPlot(seurat.object,features = cellmarker.features, group.by = "ANY META DATA COLUMN")
-
-#Removing clusters or low abundance celltypes#####
-#At this point you might have look at your UMAPs and decide to clean up unwanted clusters and/or low abundance cell types
-#Please keep in mind though: If you remove cells you have to go all the way back to Normalization on reiterate the whole workflow process
-
-#Example: We looked at our UMAP and HeatMap and decided that clusters 3 and 4 out of the total 9 (0-9) are not needed
-
-seurat.object<-subset(seurat.object,subset = seurat_clusters %in% c(0,1,2,5,6,7,8,9)) #Basically here we tell Seurat to take all the clusters EXCEPT 3 and 4
+for (i in 1:length(seurat.list.copy)){
+  seurat.info <- tibble(Count = seurat.list.copy[[i]]$Count)
+  seurat.info <- inner_join(seurat.info,datasetsUMAPtbl,by="Count")
+    
+  test.features <- VariableFeatures(seurat.list.copy[[i]])
+  test.features <- setdiff(test.features,featuresHIV)
+  mouse.genes<-str_subset(test.features,pattern = "mm10")
+  test.features <- setdiff(test.features,mouse.genes)
+  test.features <- setdiff(test.features,featuresUCOERG)
+  seurat.list.copy[[i]] <- RunPCA(seurat.list.copy[[i]],features=test.features)
+  seurat.list.copy[[i]] <- RunUMAP(seurat.list.copy[[i]],dims = 1:unique(seurat.info$datasetsUMAP))
+  seurat.list.copy[[i]] <- RunTSNE(seurat.list.copy[[i]],dims = 1:unique(seurat.info$datasetsUMAP))
+  seurat.list.copy[[i]] <- FindNeighbors(seurat.list.copy[[i]],dims = 1:unique(seurat.info$datasetsUMAP))
+  seurat.list.copy[[i]] <- FindClusters(seurat.list.copy[[i]],resolution = resolution.range) 
+    
+  show(clustree(seurat.list.copy[[i]], prefix = "SCT_snn_res."))
+}
 
 
-#Example: We looked at our UMAP and HeatMap and decided all cells under 1% total are to be removed UNLESS they are HIV+ or GFP+ (several conditions)
+#Based on the chosen resolution, which can be found in the supplementary data,
+#we create the UMAP and Heatmap plots (pre-subsetting)
 
-#First we need to create a table of all predicted celltypes in our dataset and their number
+datasetsClusterRestbl<-data.frame(datasetsClusterRes)
+datasetsClusterRestbl$Count<-rownames(datasetsClusterRestbl)
 
-celltypes<-seurat.object@meta.data%>%
-  dplyr::count(predicted.celltype.l2)%>%
-  mutate(percent=(n/sum(n))*100)
+datasetsUMAPandClusterRestbl<-inner_join(datasetsUMAPtbl,datasetsClusterRestbl,by="Count")
 
-celltypes.more.than.1.percent<-celltypes[celltypes$percent > 1,] #Now we're taking all the celltypes that have a higher than >1% proportion
 
-celltypes.more.than.1.percent.list<-celltypes.more.than.1.percent$predicted.celltype.l2 #Save all the names in a list/value
+for (i in 1:length(seurat.list)){
+    
+    seurat.info <- tibble(Count = seurat.list[[i]]$Count)
+    seurat.info <- inner_join(seurat.info,datasetsUMAPandClusterRestbl,by="Count")
+    
+    test.features <- VariableFeatures(seurat.list[[i]])
+    test.features <- setdiff(test.features,featuresHIV)
+    mouse.genes<-str_subset(test.features,pattern = "mm10")
+    test.features <- setdiff(test.features,mouse.genes)
+    test.features <- setdiff(test.features,featuresUCOERG)
+    seurat.list[[i]] <- RunPCA(seurat.list[[i]],features=test.features)
+    seurat.list[[i]] <- RunUMAP(seurat.list[[i]],dims = 1:unique(seurat.info$datasetsUMAP))
+    seurat.list[[i]] <- RunTSNE(seurat.list[[i]],dims = 1:unique(seurat.info$datasetsUMAP))
+    seurat.list[[i]] <- FindNeighbors(seurat.list[[i]],dims = 1:unique(seurat.info$datasetsUMAP))
+    seurat.list[[i]] <- FindClusters(seurat.list[[i]],resolution = unique(seurat.info$datasetsClusterRes)) 
+    
+    p1<-DimPlot(seurat.list[[i]],label = TRUE,repel = 10,label.size = 3)+NoLegend()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count),"-UMAP - pre-subsetting"),subtitle = paste0("ndims=1:",dplyr::first(seurat.info$datasetsUMAP)," res=",dplyr::first(seurat.info$datasetsClusterRes)))
+    p2<-DimPlot(seurat.list[[i]],group.by = "Count",label = TRUE,repel = 10,label.size = 3)+NoLegend()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count),"-UMAP - pre-subsetting"),subtitle = paste0("ndims=1:",dplyr::first(seurat.info$datasetsUMAP)," res=",dplyr::first(seurat.info$datasetsClusterRes)))
+    p3<-DimPlot(seurat.list[[i]],group.by = "predicted.celltype.l1",label = TRUE,repel = 10,label.size = 3)+NoLegend()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count),"-UMAP - pre-subsetting"),subtitle = paste0("ndims=1:",dplyr::first(seurat.info$datasetsUMAP)," res=",dplyr::first(seurat.info$datasetsClusterRes)))
+    p4<-DimPlot(seurat.list[[i]],group.by = "predicted.celltype.l2",label = TRUE,repel = 10,label.size = 3)+NoLegend()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count),"-UMAP - pre-subsetting"),subtitle = paste0("ndims=1:",dplyr::first(seurat.info$datasetsUMAP)," res=",dplyr::first(seurat.info$datasetsClusterRes)))
+    show(ggarrange(p1,p2,p3,p4,ncol=2,nrow = 2))
+    
+    p5<-DimPlot(seurat.list[[i]],group.by = "Doublet.Singlet",label = TRUE,repel = 10,label.size = 3)+NoLegend()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count),"-UMAP - pre-subsetting"),subtitle = paste0("ndims=1:",dplyr::first(seurat.info$datasetsUMAP)," res=",dplyr::first(seurat.info$datasetsClusterRes)))
+    p6<-DimPlot(seurat.list[[i]],group.by = "status",label = TRUE,repel = 10,label.size = 3,order=c("HIV+ very high","HIV+ high","HIV+ low","HIV-"),cols = HIV.cols)+NoLegend()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count),"-UMAP - pre-subsetting"),subtitle = paste0("ndims=1:",dplyr::first(seurat.info$datasetsUMAP)," res=",dplyr::first(seurat.info$datasetsClusterRes)))
+    p7<-DimPlot(seurat.list[[i]],group.by = "Fluorescence",label = TRUE,repel = 10,label.size = 3,order=c("GFP","dsRed","Mixed","Unmarked"),cols = fluor.cols)+NoLegend()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count),"-UMAP - pre-subsetting"),subtitle = paste0("ndims=1:",dplyr::first(seurat.info$datasetsUMAP)," res=",dplyr::first(seurat.info$datasetsClusterRes)))
+    p8<-DimPlot(seurat.list[[i]],group.by = "LentiRG.expression",label = TRUE,repel = 10,label.size = 3,order=c("LentiRG","No epxression"),cols = dsRed.cols)+NoLegend()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count),"-UMAP - pre-subsetting"),subtitle = paste0("ndims=1:",dplyr::first(seurat.info$datasetsUMAP)," res=",dplyr::first(seurat.info$datasetsClusterRes)))
+    show(ggarrange(p6,p7,p8,ncol=2,nrow = 2))
+    
+    ##Barplots
+    
+    a1<-ggplot(seurat.list[[i]]@meta.data,aes(x=seurat_clusters, fill=predicted.celltype.l1)) + geom_bar(position="fill")+
+      scale_y_continuous(labels = scales::percent)+theme_bw()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count)),
+                                                                   subtitle = "Before cluster subsetting")+
+      theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))
+    
+    a2<-ggplot(seurat.list[[i]]@meta.data,aes(x=seurat_clusters, fill=predicted.celltype.l2)) + geom_bar(position="fill")+
+      scale_y_continuous(labels = scales::percent)+theme_bw()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count)),
+                                                                   subtitle = "Before cluster subsetting")+
+      theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))
+    show(ggarrange(a1,a2,ncol=1,nrow = 2))
+    
+    h1<-ggplot(seurat.list[[i]]@meta.data,aes(x=seurat_clusters, fill=status)) + geom_bar(position="fill")+
+      scale_y_continuous(labels = scales::percent)+theme_bw()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count)),
+                                                                   subtitle = "Before cluster subsetting")+
+      theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+      scale_fill_manual(values = HIV.cols)
+    
+    h2<-ggplot(seurat.list[[i]]@meta.data,aes(x=predicted.celltype.l1, fill=status)) + geom_bar(position="fill")+
+      scale_y_continuous(labels = scales::percent)+theme_bw()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count)),
+                                                                   subtitle = "Before cluster subsetting")+
+      theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+      scale_fill_manual(values = HIV.cols)
+    
+    show(ggarrange(h1,h2,ncol=1,nrow = 2))
+    
+    tableXYZ<-seurat.list[[i]]@meta.data%>%
+      group_by(seurat_clusters)%>%
+      dplyr::count(status)%>%
+      mutate(percent=(n/sum(n))*100)
+    
+    tt<-ttheme_default(colhead=list(fg_params=list(parse=TRUE)),base_size = 5)
+    tblxyz<-tableGrob(tableXYZ,rows=NULL,theme=tt)
+    
+    show(grid.arrange(h1, tblxyz,
+                      ncol=2,
+                      as.table=TRUE))
+    
+    t1<-ggplot(seurat.list[[i]]@meta.data,aes(x=seurat_clusters, fill=LentiRG.expression)) + geom_bar(position="fill")+
+      scale_y_continuous(labels = scales::percent)+theme_bw()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count)),
+                                                                   subtitle = "Before cluster subsetting")+
+      theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+      scale_fill_manual(values = dsRed.cols)
+    
+    t2<-ggplot(seurat.list[[i]]@meta.data,aes(x=predicted.celltype.l1, fill=LentiRG.expression)) + geom_bar(position="fill")+
+      scale_y_continuous(labels = scales::percent)+theme_bw()+labs(title = paste0(dplyr:first(seurat.list[[i]]$Count)),
+                                                                   subtitle = "Before cluster subsetting")+
+      theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+      scale_fill_manual(values = dsRed.cols)
+    
+    show(ggarrange(t1,t2,ncol=1,nrow = 2))
+    
+    tableXYZ<-seurat.list[[i]]@meta.data%>%
+      group_by(seurat_clusters)%>%
+      dplyr::count(LentiRG.expression)%>%
+      mutate(percent=(n/sum(n))*100)
+    
+    tblxyz<-tableGrob(tableXYZ,rows=NULL,theme=tt)
+    
+    show(grid.arrange(t1, tblxyz,
+                      ncol=2,
+                      as.table=TRUE))
+    
+    o1<-ggplot(seurat.list[[i]]@meta.data,aes(x=seurat_clusters, fill=Fluorescence)) + geom_bar(position="fill")+
+      scale_y_continuous(labels = scales::percent)+theme_bw()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count)),
+                                                                   subtitle = "Before cluster subsetting")+
+      theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+      scale_fill_manual(values = fluor.cols)
+    
+    o2<-ggplot(seurat.list[[i]]@meta.data,aes(x=predicted.celltype.l1, fill=Fluorescence)) + geom_bar(position="fill")+
+      scale_y_continuous(labels = scales::percent)+theme_bw()+labs(title = paste0(dplyr::first(seurat.list[[i]]$Count)),
+                                                                   subtitle = "Before cluster subsetting")+
+      theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+      scale_fill_manual(values = fluor.cols)
+    
+    show(ggarrange(o1,o2,ncol=1,nrow = 2))
+    
+    tableXYZ<-seurat.list[[i]]@meta.data%>%
+      group_by(seurat_clusters)%>%
+      dplyr::count(Fluorescence)%>%
+      mutate(percent=(n/sum(n))*100)
+    
+    tblxyz<-tableGrob(tableXYZ,rows=NULL,theme=tt)
+    
+    show(grid.arrange(o1, tblxyz,
+                      ncol=2,
+                      as.table=TRUE))
+    
+    #Heatmaps presubsetting
+    seurat.list.markers <- FindAllMarkers(seurat.list[[i]])
+    mousemarkers<-str_subset(seurat.list.markers$gene,pattern = "mm10")
+    seurat.list.markers<-seurat.list.markers[!seurat.list.markers$gene %in% mousemarkers,]
+    seurat.list.markers<-seurat.list.markers[!seurat.list.markers$gene %in% featuresHIV,]
+    seurat.list.markers<-seurat.list.markers[!seurat.list.markers$gene %in% featuresUCOERG,]
+    
+    #Save Markers full list and Top10
+    assign(paste0(dplyr::first(seurat.list[[i]]$Count),"-markers-unsupervised"),seurat.list.markers)
+    seurat.list.markers.top10 <- seurat.list.markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
+    assign(paste0(dplyr::first(seurat.list[[i]]$Count),"-markers-unsupervised-topten"),seurat.list.markers.top10)
+    
+    #Show Heatmap
+    show(DoHeatmap(seurat.list[[i]], features = seurat.list.markers.top10$gene,size = 3)+NoLegend()+
+           labs(title = paste0(dplyr::first(seurat.list[[i]]$Count)),
+                subtitle = "Before cluster subsetting")+theme(text = element_text(size = 5)))
+    
+}
 
-#Now we subset
-#Our Conditions are seperated with "|" 
-#"|" means "or", but if want to select cells that match all these criteria you use "&&" which means "and"
+#Finish pdf#####
+dev.off()
 
-seurat.object <- subset(seurat.object,subset = predicted.celltype.l2 %in% celltypes.more.than.1.percent.list |
-                                                         status == c("HIV+ low, HIV+ high, HIV+ very high") |
-                                                         Fluorescence == "GFP")
+#Save workspace and seurat.list and move on to Workflow-canonical-cellmarkers.R
+
+save.image("Seurat.RData")
+saveRDS(seurat.list,"seurat.list.pre.subset.rds")
+
+
+
 
 
