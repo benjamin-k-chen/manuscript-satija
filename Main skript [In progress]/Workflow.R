@@ -21,167 +21,227 @@ library(scCustomize)
 
 #Loading the dataset####
 
-seurat.object <- Read10X(data.dir = "path/to/filtered_feature_bc_matrix/") 
-seurat.object <- CreateSeuratObject(counts = seurat.object, project = "NAME")
+#Get filepath
+filepath<-c('path/to/datasets')
+
+dirs <- list.dirs(path = filepath, recursive = F, full.names = F)
+dirs <- dirs[dirs %in% datasets]
+
+#Loading all other datasets and creating corresponding SeuratObjects
+#The name of the object is added as meta.data column 'Count'
+
+for(x in dirs){
+  name <-gsub('/filtered_feature_bc_matrix/','', x)
+  name2 <-paste0(refnumber,name,sep="x")
+  cts <- ReadMtx(mtx = paste0(filepath,x,'/matrix.mtx.gz'),
+                 features = paste0(filepath,x,'/features.tsv.gz'),
+                 cells = paste0(filepath,x,'/barcodes.tsv.gz'))
+  
+  # create seurat objects
+  SeuratObject<-CreateSeuratObject(counts = cts)
+  SeuratObject$Count <- paste0(name)
+  assign(name2,SeuratObject)
+}
+
+rm(name,name2,cts,SeuratObject,x)
+
+#Moving all SeuratObjects into a list of Objects
+list <-ls(pattern="Ref5x")
+seurat.list<-lapply(list,get)
+
+#And remove the individual datasets from the enviroment
+remove(list=ls(pattern = refnumber))
 
 #Mitochondrial gene percentage#####
 ##Our custom reference was was made using the 10x reference that contains both human and mouse genes,
 #therefore we can calculate both mitochondrial gene percentages
 
-seurat.object$mitoHuCH38Percent <- PercentageFeatureSet(seurat.object, pattern='*-MT-') #Calculating human mitochondrial gene percentage
-seurat.object$mitoMM10Percent <- PercentageFeatureSet(seurat.object, pattern='*-mt-') #Calculating mouse mitochondrial gene percentage
+for(i in 1:length(seurat.list)) {
+  seurat.list[[i]]$mitoHuCH38Percent <- PercentageFeatureSet(seurat.list[[i]], pattern='*-MT-') #Calculating human mitochondrial gene percentage
+  seurat.list[[i]]$mitoMM10Percent <- PercentageFeatureSet(seurat.list[[i]], pattern='*-mt-') #Calculating mouse mitochondrial gene percentage
+  
+  p1<-VlnPlot(seurat.list[[i]], features=c("nCount_RNA","mitoMM10Percent","mitoHuCH38Percent","nFeature_RNA"),ncol=4,group.by = "Count")+labs(title = paste0(unique(seurat.list[[i]]$Count),"-before-QC"))
+  p2<-FeatureScatter(seurat.list[[i]], feature1 = "nCount_RNA", feature2 = "mitoHuCH38Percent",group.by = "Count")+labs(title = paste0(unique(seurat.list[[i]]$Count),"-before-QC"))
+  p3<-FeatureScatter(seurat.list[[i]], feature1 = "nCount_RNA", feature2 = "nFeature_RNA",group.by = "Count")+labs(title = paste0(unique(seurat.list[[i]]$Count),"-before-QC"))
+  show(ggarrange(p1,p2,p3,ncol=2,nrow = 2))
+}
 
-#Violin Plots######
-#This shows the violin plot for the four categories
-VlnPlot(seurat.object, features=c("nCount_RNA","mitoMM10Percent","mitoHuCH38Percent","nFeature_RNA")) 
-
-#Scatter Plots####
-FeatureScatter(seurat.object, feature1 = "nCount_RNA", feature2 = "mitoHuCH38Percent")
-FeatureScatter(seurat.object, feature1 = "nCount_RNA", feature2 = "mitoMM10Percent")
-FeatureScatter(seurat.object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
-
-#The individual threshold values can be found
+#The individual threshold values can be found in the supplemetary data
 
 #Metadata######
-##Add some meta.data to our dataset
-#Based on what we know i.e. "SampleType","Treatment","Fluorescence","Condition" etc.
-#You add as many new columns as you like
+##Add recorded meta.data to our dataset
+#We added Fluorescence-SampleType-Count-MouseID-Condition-Treatment
+#The individual values can be found in the supplementary data
 
-seurat.object <- AddMetaData(seurat.object, metadata = "______", col.name = "_____")
+#Add Treatment as metadata
+
+datasetsTRtbl<-data.frame(datasetsTR)
+datasetsTRtbl$Count<-rownames(datasetsTRtbl)
+
+for(i in 1:length(seurat.list)) {
+  seurat.info <- tibble(Count = seurat.list[[i]]$Count)
+  seurat.info <- inner_join(seurat.info,datasetsTRtbl,by="Count") 
+  seurat.list[[i]] <- AddMetaData(seurat.list[[i]], metadata = seurat.info$datasetsTR, col.name = "Treatment")
+}
+
+#Fluorescence is added as metadata
+
+datasetsFLtbl<-data.frame(datasetsFL)
+datasetsFLtbl$Count<-rownames(datasetsFLtbl)
+
+for(i in 1:length(seurat.list)) {
+  seurat.info <- tibble(Count = seurat.list[[i]]$Count)
+  seurat.info <- inner_join(seurat.info,datasetsFLtbl,by="Count") 
+  seurat.list[[i]] <- AddMetaData(seurat.list[[i]], metadata = seurat.info$datasetsFL, col.name = "Fluorescence")
+}
+
+
+#MouseID is added as metadata
+
+datasetsMouseIDtbl<-data.frame(datasetsMouseID)
+datasetsMouseIDtbl$Count<-rownames(datasetsMouseIDtbl)
+
+for(i in 1:length(seurat.list)) {
+  seurat.info <- tibble(Count = seurat.list[[i]]$Count)
+  seurat.info <- inner_join(seurat.info,datasetsMouseIDtbl,by="Count") 
+  seurat.list[[i]] <- AddMetaData(seurat.list[[i]], metadata = seurat.info$datasetsFL, col.name = "MouseID")
+}
+
+#Add SampleType as metadata
+
+datasetsSTtbl<-data.frame(datasetsST)
+datasetsSTtbl$Count<-rownames(datasetsSTtbl)
+
+for(i in 1:length(seurat.list)) {
+  seurat.info <- tibble(Count = seurat.list[[i]]$Count)
+  seurat.info <- inner_join(seurat.info,datasetsSTtbl,by="Count") 
+  seurat.list[[i]] <- AddMetaData(seurat.list[[i]], metadata = seurat.info$datasetsST, col.name = "SampleType")
+}
+
+#Add Condition as metadata
+datasetsCotbl<-data.frame(datasetsCo)
+datasetsCotbl$Count<-rownames(datasetsCotbl)
+
+for(i in 1:length(seurat.list)) {
+  seurat.info <- tibble(Count = seurat.list[[i]]$Count)
+  seurat.info <- inner_join(seurat.info,datasetsCotbl,by="Count") 
+  seurat.list[[i]] <- AddMetaData(seurat.list[[i]], metadata = seurat.info$datasetsCo, col.name = "Condition")
+}
 
 
 #Species Identification#### 
 #If you used a the 10X reference that contains both mouse and human genes
 
-#We define every gene that has the prefix "mm10" as "mouse" and every other as "human"
-#This basically creates a vector based on the genes in the dataset (rownames) and gives them the indicator "human" or "mouse"
-gene_species <- ifelse(str_detect(rownames(seurat.object),"mm10*"), "mouse", "human")
-
-#We then use these indicators to get a True/False statement for each gene in that list wether they are "human" or "mouse"
-mouse_inds <- gene_species == "mouse" #All "mouse" genes get indicator "TRUE" all "human" get "FALSE"
-human_inds <- gene_species == "human" #All "human" genes get indicator "TRUE" all "mouse" get "FALSE"
-
-#Using these indicators we can now create a table calles "cell_species" using tibble
-#We calculate the amount of "human" or "mouse" umi based on the amount of genes that are "TRUE" within the total umi count
-#of each cell which we calculate using colSums() 
-#Within this table we also calculate the % of human/mouse umi within each cell (each row represents a cell)
-
-cell_species <- tibble(n_mouse_umi = Matrix::colSums(seurat.object[mouse_inds,]),
-                       n_human_umi = Matrix::colSums(seurat.object[human_inds,]),
-                       tot_umi = Matrix::colSums(seurat.object),
-                       prop_mouse = n_mouse_umi / tot_umi,
-                       prop_human = n_human_umi / tot_umi)
-
-#Using our table we now determine the species of the cell in a new added column called "species"
-#With case_when() we decide that if prop_mouse bigger that >95% the value in species is to be "mouse"
-#if prop_human > 95% the value in species is to be "human", and if it's somewhere inbetween (e.g. 80% human, 20% mouse) the value is "mixed"
-
-cell_species <- cell_species %>% mutate(species = case_when(prop_mouse > 0.95 ~ "mouse",prop_human > 0.95 ~ "human",TRUE ~ "mixed"))
-
-#We can show the distribution of umis in a scatter plot with the color being the determined species
-ggplot(cell_species, aes(n_human_umi, n_mouse_umi, color = species))+
-      geom_point()+labs(title = "Human vs. Mouse UMIs")+theme_bw()
-
-#We then add this information as metadata to our object
-seurat.object <- AddMetaData(seurat.object, metadata = cell_species$species, col.name = "species")
-
-
-
-
+for(i in 1:length(seurat.list)){
+  #We define every gene that has the prefix "mm10" as "mouse" and every other as "human"
+  gene_species <- ifelse(str_detect(rownames(seurat.list[[i]]),"mm10*"), "mouse", "human")
+  mouse_inds <- gene_species == "mouse"
+  human_inds <- gene_species == "human"
+  
+  #Using these indicators we can now create a table calles "cell_species" using tibble
+  #We calculate the amount of "human" or "mouse" umi based on the amount of genes that are "TRUE" within the total umi count
+  #of each cell which we calculate using colSums() 
+  #Within this table we also calculate the % of human/mouse umi within each cell (each row represents a cell)
+  
+  cell_species <- tibble(n_mouse_umi = Matrix::colSums(seurat.list[[i]][mouse_inds,]),
+                         n_human_umi = Matrix::colSums(seurat.list[[i]][human_inds,]),
+                         tot_umi = Matrix::colSums(seurat.list[[i]]),
+                         prop_mouse = n_mouse_umi / tot_umi,
+                         prop_human = n_human_umi / tot_umi,
+                         Count = seurat.list[[i]]$Count)
+  
+  #Using our table we now determine the species of the cell in a new added column called "species"
+  #With case_when() we decide that if prop_mouse bigger that >95% the value in species is to be "mouse"
+  #if prop_human > 95% the value in species is to be "human", and if it's somewhere inbetween (e.g. 80% human, 20% mouse) the value is "mixed"
+  
+  cell_species <- cell_species %>% mutate(species = case_when(prop_mouse > 0.95 ~ "mouse",prop_human > 0.95 ~ "human",TRUE ~ "mixed"))
+  table1<-cell_species %>% dplyr::count(species) %>% mutate(proportion = n / ncol(seurat.list[[i]]))
+  show(ggplot(cell_species, aes(n_human_umi, n_mouse_umi, color = species,shape=Count)) +
+         geom_point()+labs(title = paste0(unique(cell_species$Count),"- Human vs. Mouse UMIs"))+theme_bw())
+  #We then add this information as metadata to our object
+  seurat.list[[i]] <- AddMetaData(seurat.list[[i]], metadata = cell_species$species, col.name = "species")
+  tbl1<-tableGrob(table1,rows=NULL,theme=tt)
+  grid.arrange(ggplot(seurat.list[[i]]@meta.data,aes(x=Count, fill=species)) + geom_bar(position="fill")+
+                 scale_y_continuous(labels = scales::percent)+theme_bw()+theme(axis.text.x = element_text(hjust=1,angle=45)), tbl1,ncol=2,as.table=TRUE,heights=c(2,1))
+}
 
 
 
 
 #HIV transcriptional positive cell identification####
 #This step basically follows the same principle as the species identification step
+#We initially defined a third category of 'HIV+' called 'HIV+ very high' this was relabeled as 'HIV+ high'
 
-#We define every gene that has the prefix "mm10" or "GRCh38" or are the lenti virus genes "dsRed" or "EGFP" or "WPRE" as "HIV-" and the remaining as "HIV+"
-#You can also flip this around and name all your HIV genes that you have defined in your reference and mark them as HIV+ and all remaining genes as HIV-
-#!!!Check if the genes you are selecting using str_detect are actually the ones you want to select, some gene names might be similar and then falsely selected!!
-#use str_subset(rownames(seurat.object), pattern = c("GENES OF INTEREST"))
-#Sidenote: Adding * to the end of the name indicates it as part of a pattern, adding ^ before the name (e.g. "^gag-pol") indicates that there are no characters in front
-
-gene_HIV <- ifelse(str_detect(rownames(seurat.object),"mm10*|GRCh38*|dsRed|EGFP|WPRE"),"HIV-", "HIV+")
-hivpos_inds <- gene_HIV == "HIV+"
-hivneg_inds <- gene_HIV == "HIV-"
-
-#Here we again create a table by calcualting the percentages of HIV+/HIV- genes per cell
-cell_hivstat <- tibble(n_hivpos_umi = Matrix::colSums(seurat.object[hivpos_inds,]),
-                         n_hivneg_umi = Matrix::colSums(seurat.object[hivneg_inds,]),
-                         tot_umi = Matrix::colSums(seurat.object),
+for(i in 1:length(seurat.list)) {
+  gene_HIV <- ifelse(str_detect(rownames(seurat.list[[i]]),"mm10*|GRCh38*|dsRed|EGFP|WPRE"),"HIV-", "HIV+")
+  hivpos_inds <- gene_HIV == "HIV+"
+  hivneg_inds <- gene_HIV == "HIV-"
+  cell_hivstat <- tibble(n_hivpos_umi = Matrix::colSums(seurat.list[[i]][hivpos_inds,]),
+                         n_hivneg_umi = Matrix::colSums(seurat.list[[i]][hivneg_inds,]),
+                         tot_umi = Matrix::colSums(seurat.list[[i]]),
                          prop_hivpos = n_hivpos_umi / tot_umi,
-                         prop_hivneg = n_hivneg_umi / tot_umi)
-
-#Here it becomes indivdual again and of course depends on your experimental design/dataset/subjective view
-#In our datasets we saw a wide range of HIV+ umis (0 to >1000), so we decided on seperate ranges of HIV+ transkript positivity
-#The nwely created column is called "status"
-#Cells with >100 HIV+ umis are "HIV+ very high", 11-100 is "HIV+ high", 2-10 is "HIV+ low", and anything 1 and < is "HIV-"  
-cell_hivstat <- cell_hivstat %>% mutate(status = case_when(n_hivpos_umi > 100 ~ "HIV+ very high",
-                                                           n_hivpos_umi > 10 & n_hivpos_umi <= 100 ~ "HIV+ high",
-                                                           n_hivpos_umi <= 1 ~ "HIV-",
-                                                           n_hivpos_umi > 1 & n_hivpos_umi <= 10 ~ "HIV+ low"))
-
-#Again we can show this in a scatter plot HIV+ umis vs. HIV- umis 
-ggplot(cell_hivstat, aes(n_hivpos_umi, n_hivneg_umi, color = status))+ 
-  geom_point()+scale_x_log10()+scale_y_log10()+
-  labs("HIV+ vs. HIV- UMIs")+
-  theme_bw()
-
-#And then finally in the last step we add the "status" as meta data for each cell in our seurat object
-seurat.object <- AddMetaData(seurat.object, metadata = cell_hivstat$status, col.name = "status")
-
-
-
-
-
-
+                         prop_hivneg = n_hivneg_umi / tot_umi,
+                         SampleType = seurat.list[[i]]$SampleType,
+                         Count = seurat.list[[i]]$Count)
+  cell_hivstat <- cell_hivstat %>% mutate(status = case_when(n_hivpos_umi > 100 ~ "HIV+ very high",n_hivpos_umi > 10 & n_hivpos_umi <= 100 ~ "HIV+ high",n_hivpos_umi <= 1 ~ "HIV-",n_hivpos_umi > 1 & n_hivpos_umi <= 10 ~ "HIV+ low"))
+  table2<-cell_hivstat %>% dplyr::count(status) %>% mutate(proportion = n / ncol(seurat.list[[i]]))
+  show(ggplot(cell_hivstat, aes(n_hivpos_umi, n_hivneg_umi, color = status,shape=Count)) +
+         geom_point()+scale_x_log10()+scale_y_log10()+labs(title = paste0(unique(cell_hivstat$Count),"- HIV+ vs. HIV- UMIs"))+scale_color_manual(values = HIV.cols)+theme_bw())
+  seurat.list[[i]] <- AddMetaData(seurat.list[[i]], metadata = cell_hivstat$status, col.name = "status")
+  tbl2<-tableGrob(table2,rows=NULL,theme=tt)
+  grid.arrange(ggplot(seurat.list[[i]]@meta.data,aes(x=Count, fill=status)) + geom_bar(position="fill")+
+                 scale_y_continuous(labels = scales::percent)+theme_bw()+theme(axis.text.x = element_text(hjust=1,angle=45)), tbl2,ncol=2,as.table=TRUE,heights=c(2,1))
+}
 
 
 
 #Lenti-RG transcriptionally positive cell identification####
 #This follows the same principal as the two previous steps
 
-gene_dsRed <- ifelse(str_detect(rownames(seurat.object),c("dsRed|WPRE|EGFP")),"LentiRG", "other")
-
-dsRed_inds <- gene_dsRed == "LentiRG"
-nondsRed_inds <- gene_dsRed == "other"
-
-cell_dsRedstat <- tibble(n_dsRed_umi = Matrix::colSums(seurat.object[dsRed_inds,]),
-                         n_other_umi = Matrix::colSums(seurat.object[nondsRed_inds,]),
-                         tot_umi = Matrix::colSums(seurat.object),
-                         prop_dsRed = n_dsRed_umi / tot_umi,
-                         prop_other = n_other_umi / tot_umi)
+for(i in 1:length(seurat.list)) {
+  gene_dsRed <- ifelse(str_detect(rownames(seurat.list[[i]]),c("dsRed|WPRE|EGFP")),"LentiRG", "other")
+  dsRed_inds <- gene_dsRed == "LentiRG"
+  nondsRed_inds <- gene_dsRed == "other"
+  cell_dsRedstat <- tibble(n_dsRed_umi = Matrix::colSums(seurat.list[[i]][dsRed_inds,]),
+                           n_other_umi = Matrix::colSums(seurat.list[[i]][nondsRed_inds,]),
+                           tot_umi = Matrix::colSums(seurat.list[[i]]),
+                           prop_dsRed = n_dsRed_umi / tot_umi,
+                           prop_other = n_other_umi / tot_umi,
+                           SampleType = seurat.list[[i]]$SampleType,
+                           Count = seurat.list[[i]]$Count,
+                           Fluorescence = seurat.list[[i]]$Fluorescence)
   
-#Any cell that has UMI >=1 of the Lenti-RG genes we determine as "Lenti-RG" - The column is named "dsRed expression" (technically kinda wrong)
-
-cell_dsRedstat <- cell_dsRedstat %>% mutate(dsRed.expr = case_when(n_dsRed_umi >= 1 ~ "LentiRG",TRUE ~ "No expression"))
-
-#The corresponding scatterplot
-ggplot(cell_dsRedstat, aes(n_dsRed_umi, n_other_umi, color = dsRed.expr))+
-  geom_point()+
-  scale_x_log10()+scale_y_log10()+
-  labs(title = "LentiRG UMIs")+
-  theme_bw()
-
-#We add this info as meta data to our seurat object
-seurat.list[[i]] <- AddMetaData(seurat.object, metadata = cell_dsRedstat$dsRed.expr, col.name = "LentiRG.expression")
-
+  cell_dsRedstat <- cell_dsRedstat %>% mutate(dsRed.expr = case_when(n_dsRed_umi >= 1 ~ "LentiRG",TRUE ~ "No expression"))
+  table3<-cell_dsRedstat %>% dplyr::count(dsRed.expr) %>% mutate(proportion = n / ncol(seurat.list[[i]]))
+  show(ggplot(cell_dsRedstat, aes(n_dsRed_umi, n_other_umi, color = dsRed.expr,shape=Fluorescence)) +
+         geom_point()+scale_x_log10()+scale_y_log10()+labs(title = paste0(unique(cell_dsRedstat$Count),"- LentiRG UMIs"))+scale_color_manual(values = dsRed.cols)+theme_bw())
+  
+  seurat.list[[i]] <- AddMetaData(seurat.list[[i]], metadata = cell_dsRedstat$dsRed.expr, col.name = "LentiRG.expression")
+  tbl3<-tableGrob(table3,rows=NULL,theme=tt)
+  grid.arrange(ggplot(seurat.list[[i]]@meta.data,aes(x=Count, fill=LentiRG.expression)) + geom_bar(position="fill")+
+                 scale_y_continuous(labels = scales::percent)+theme_bw()+theme(axis.text.x = element_text(hjust=1,angle=45)), tbl3,ncol=2,as.table=TRUE,heights=c(2,1))
+}
 
 #QC - Part 1####
 #We base the 1st QC round on nFeature_RNA count and mt% thresholds
-#
-#Here, the thresholds you decided on when looking at the previous violin plots come into play
+datasetsUppertbl<-data.frame(datasetsUpper)
+datasetsUppertbl$Count<-rownames(datasetsUppertbl)
+datasetsHumanMitotbl<-data.frame(datasetsHumanMito)
+datasetsHumanMitotbl$Count<-rownames(datasetsHumanMitotbl)
+datasetsUppertbl<-inner_join(datasetsUppertbl,datasetsHumanMitotbl,by="Count")
 
-seurat.object <- subset(seurat.object,subset= nFeature_RNA > 200 & nFeature_RNA < "UPPER THRESHOLD" & mitoHuCH38Percent < "mt-gene% cutoff")
-
-#You can look at the violin plots post-subsetting again to check your thresholds
-VlnPlot(seurat.object, features=c("nCount_RNA","mitoMM10Percent","mitoHuCH38Percent","nFeature_RNA"))+patchwork::plot_annotation(title = "After 1st QC") 
-
-#As well as the scatterplots
-FeatureScatter(seurat.object, feature1 = "nCount_RNA", feature2 = "mitoHuCH38Percent")+labs(title = "After 1st QC - human %mt")
-FeatureScatter(seurat.object, feature1 = "nCount_RNA", feature2 = "mitoMM10Percent")+labs(title = "After 1st QC - mouse %mt")
-FeatureScatter(seurat.object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")+labs(title = "After 1st QC - nFeature_RNA")
-
+for(i in 1:length(seurat.list)) {
+  seurat.info <- tibble(Count = seurat.list[[i]]$Count)
+  seurat.info <- inner_join(seurat.info,datasetsUppertbl,by="Count") 
+  seurat.list[[i]]$mitoHuCH38Percent <- PercentageFeatureSet(seurat.list[[i]], pattern='*-MT-') #Calculating human mitochondrial gene percentage
+  seurat.list[[i]]$mitoMM10Percent <- PercentageFeatureSet(seurat.list[[i]], pattern='*-mt-') #Calculating mouse mitochondrial gene percentage
+  seurat.list[[i]] <- subset(seurat.list[[i]],subset= nFeature_RNA > 200 & nFeature_RNA < unique(seurat.info$datasetsUpper))
+  seurat.list[[i]] <- subset(seurat.list[[i]],subset= mitoHuCH38Percent < unique(seurat.info$datasetsHumanMito))
+  p1<-VlnPlot(seurat.list[[i]], features=c("nCount_RNA","mitoMM10Percent","mitoHuCH38Percent","nFeature_RNA"),ncol=4,group.by = "Count")+labs(title = paste0(unique(seurat.list[[i]]$Count),"-after-1st.QC"))
+  p2<-FeatureScatter(seurat.list[[i]], feature1 = "nCount_RNA", feature2 = "mitoHuCH38Percent",group.by = "Count")+labs(title = paste0(unique(seurat.list[[i]]$Count),"-after-1st.QC"))
+  p3<-FeatureScatter(seurat.list[[i]], feature1 = "nCount_RNA", feature2 = "nFeature_RNA",group.by = "Count")+labs(title = paste0(unique(seurat.list[[i]]$Count),"-after-1st.QC"))
+  show(ggarrange(p1,p2,p3,ncol=2,nrow = 2))
+}
 
 #Identifying Doublets - DoubletFinder####
 
@@ -192,101 +252,85 @@ FeatureScatter(seurat.object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA"
 #e.g we used 5% since the cell -recovery rate for Namita's datasets was ~50.0000 and 10X gives a ~0.8% for 1000 cells
 #So here you need to put in the appropriate expected multiplet rate for your dataset
 
-#We first need to normalize and run a basic PCA on our dataset
-#It's also a good idea to make a copy of the seurat.object before running this part
+seurat.list.copy<-seurat.list
 
-#Make a save copy
-seurat.object.original <- seurat.object
-
-#
-seurat.object <- SCTransform(seurat.object)
-seurat.object <- RunPCA(seurat.object)
-seurat.object <- FindNeighbors(object = seurat.object, dims = 1:30)
-seurat.object <- FindClusters(seurat.object) #For this we will use the default resolution settings
-seurat.object <- RunUMAP(seurat.object, dims = 1:30)
+for(i in 1:length(seurat.list.copy)){
+  seurat.list.copy[[i]] <- SCTransform(seurat.list.copy[[i]])
+  seurat.list.copy[[i]] <- RunPCA(seurat.list.copy[[i]])
+  seurat.list.copy[[i]] <- FindNeighbors(object = seurat.list.copy[[i]], dims = 1:30)
+  seurat.list.copy[[i]] <- FindClusters(seurat.list.copy[[i]]) #For this we will use the default resolution settings
+  seurat.list.copy[[i]] <- RunUMAP(seurat.list.copy[[i]], dims = 1:30)
   
-#pK Identification (no ground-truth)
-#Since there's no multiplexing we do not have any ground-truth (e.g. CMO-barcode-doublets)
-
-sweep.res.seurat.list <- paramSweep_v3(seurat.object, PCs = 1:ncol(seurat.object@reductions$pca) , sct = TRUE)
-sweep.stats.seurat.list <- summarizeSweep(sweep.res.seurat.list, GT = FALSE)
-bcmvn.sweep.stats.seurat.list <- find.pK(sweep.stats.seurat.list)
+  ## pK Identification (no ground-truth) ---------------------------------------------------------------------------------------
+  sweep.res.seurat.list <- paramSweep_v3(seurat.list.copy[[i]], PCs = 1:ncol(seurat.list.copy[[i]]@reductions$pca) , sct = TRUE)
+  sweep.stats.seurat.list <- summarizeSweep(sweep.res.seurat.list, GT = FALSE)
+  bcmvn.sweep.stats.seurat.list <- find.pK(sweep.stats.seurat.list)
   
-#The default generated plot is generally really unhelpful so we generate our own
-ggplot(bcmvn.sweep.stats.seurat.list, aes(pK, BCmetric, group = 1))+
-       geom_point()+geom_line()+labs(title = "SeuratObject - pKs")+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  #The default generated plot is generally really unhelpful so we generate our own
+  #show(ggplot(bcmvn.sweep.stats.seurat.list, aes(pK, BCmetric, group = 1))+geom_point()+geom_line()+labs(title = paste0(dplyr::first(seurat.list.copy[[i]]$Count)," - pKs"))+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)))
   
-#This line whill then automatically select optimal pK with the highest BCmetric
-pK <- bcmvn.sweep.stats.seurat.list %>%
-  filter(BCmetric == max(BCmetric)) %>%
-  select(pK) 
-pK <- as.numeric(as.character(pK[[1]])) #Taking the top pK value
-
-# Homotypic Doublet Proportion Estimate 
-#Based on the number of cells in the dataset
-nExp_poi <- round(0.05*nrow(seurat.object@meta.data))  ##Assuming 5% doublet formation rate - This rate is technically individual for each datasets depending on the expected recovery rate during the 10X protocol
+  #This line whill then automatically select optimal pK with the hightes BCmetric
+  pK <- bcmvn.sweep.stats.seurat.list %>%
+    filter(BCmetric == max(BCmetric)) %>%
+    select(pK) 
+  pK <- as.numeric(as.character(pK[[1]]))
   
-annotations <- seurat.object@meta.data$seurat_clusters #based on the clustering results
-homotypic.prop <- modelHomotypic(annotations)           
   
-nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
   
-# Run DoubletFinder with varying classification stringencies
-#Doublet/Singlet identity will be assigned to each cell
-seurat.object <- doubletFinder_v3(seurat.object,
+  ## Homotypic Doublet Proportion Estimate -------------------------------------------------------------------------------------
+  nExp_poi <- round(0.05*nrow(seurat.list.copy[[i]]@meta.data))  ## Assuming 5% doublet formation rate - tailor for your dataset (Namita's datasets are) - This rate is technically individual for each datasets depending on the expected recovery rate during the 10X protocol
+  
+  annotations <- seurat.list.copy[[i]]@meta.data$seurat_clusters #based on the clustering results we're 
+  homotypic.prop <- modelHomotypic(annotations)           
+  
+  nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+  
+  ## Run DoubletFinder with varying classification stringencies ----------------------------------------------------------------
+  seurat.list.copy[[i]] <- doubletFinder_v3(seurat.list.copy[[i]],
                                             PCs = 1:30,
                                             pN = 0.25,
                                             pK = pK,
                                             nExp = nExp_poi.adj, 
                                             reuse.pANN = FALSE,
                                             sct = TRUE)
-
-#Showing Doublets/Singlet in the basic UMAP created
-#The name for this column always contains the number of estimated doublets + variables used by DoubletFinder,
-#which means it is never consistent. With str_subset we can select the column automatically without having to look at the objcet and 
-#putting in the pull name of the new meta.data column
-
-DimPlot(seurat.object,
-        group.by = dplyr::first(str_subset(colnames(seurat.object@meta.data),pattern = "DF.classifications")),
-        label=TRUE,repel=10,label.size=3)+
-  NoLegend()+
-  labs(title = paste0(dplyr::first(str_subset(colnames(seurat.object@meta.data),pattern = "DF.classifications"))))
-
-##How many Doublets were found?
-print(paste0("The SeuratObject had ",nExp_poi.adj," estimated Doublets"))
+  rm(sweep.res.seurat.list,sweep.stats.seurat.list,bcmvn.sweep.stats.seurat.list)
   
-#Rename the column to get uniform meta.data columns
+  #Showing Doublets
+  p1<-DimPlot(seurat.list.copy[[i]],group.by = dplyr::first(str_subset(colnames(seurat.list.copy[[i]]@meta.data),pattern = "DF.classifications")),label=TRUE,repel=10,label.size=3)+NoLegend()+labs(title = paste0(dplyr::first(str_subset(colnames(seurat.list.copy[[i]]@meta.data),pattern = "DF.classifications"))))
+  p2<-DimPlot(seurat.list.copy[[i]],group.by = dplyr::last(str_subset(colnames(seurat.list.copy[[i]]@meta.data),pattern = "DF.classifications")),label=TRUE,repel=10,label.size=3)+NoLegend()+labs(title = paste0(dplyr::first(seurat.list.copy[[i]]$Count)))
+  table(pbmc.seurat.filtered@meta.data$dplyr::last(str_subset(colnames(seurat.list.copy[[i]]@meta.data),pattern = "DF.classifications")))
+  p3<-DimPlot(seurat.list.copy[[i]],group.by = species,label=TRUE,repel=10,label.size=3)+NoLegend()+labs(title = "Human and Mouse")
+  p4<-DimPlot(seurat.list.copy[[i]],label=TRUE,repel=10,label.size=3)+NoLegend()+labs(title = "Clusters")
   
-Indx<-str_which(colnames(seurat.object@meta.data),pattern="DF.classifications")
+  show(ggarrange(p1,p2,p3,p4,ncol=2,nrow=2))
   
-colnames(seurat.object@meta.data)[Indx] <- "Doublet.Singlet"
+  ##How many Doublets were found?
+  print(paste0(dplyr::first(seurat.list.copy[[i]]$Count)," had ",nExp_poi.adj," doublets"))
+  
+  #Rename the column to get uniform meta.data columns
+  
+  Indx<-str_which(colnames(seurat.list.copy[[i]]@meta.data),pattern="DF.classifications")
+  
+  colnames(seurat.list.copy[[i]]@meta.data)[Indx] <- "Doublet/Singlet"
+}
 
-#We don't need the normalization and PCA/UMAP anymore so we take the meta.data and add it to the copy of seurat.object
-#we made before running DoubletFinder
-
-Doublet.Singlet <- FetchData(seurat.object, vars = c('Doublet.Singlet'), slot="counts") #In this table the cell.barcodes are the rownames, those are matching to the copy and are used to match the meta.data to the right cell
-
-seurat.object.original<-AddMetaData(seurat.object.original,Doublet.Singlet) #The automatic column name will be the column name of the table
-
-#We can now safely remove the SeuratObject we don't need by overwriting them
-
-seurat.object<-seurat.object.original
-
-rm(seurat.object.original)
-
-##This is the point we're we would remove the "Doublet" cells
-#In our analysis we kept th expected Doublets in
-
-seurat.object <- subset(seurat.object,subset = Doublet.Singlet == "Singlet")
+rm(seurat.list.copy)
 
 #QC - Part 2#####
 #Now we're removing those cells with species "mouse" and "mixed"
 
-seurat.object <- subset(seurat.object,subset = species == "human")
+for(i in 1:length(seurat.list)){
+  seurat.list[[i]] <- subset(seurat.list[[i]],subset = species == "human")
+  p1<-VlnPlot(seurat.list[[i]], features=c("nCount_RNA","mitoMM10Percent","mitoHuCH38Percent","nFeature_RNA"),ncol=4,group.by = "Count")+labs(title = paste0(unique(seurat.list[[i]]$Count),"-after-2nd.QC"))
+  p2<-FeatureScatter(seurat.list[[i]], feature1 = "nCount_RNA", feature2 = "mitoHuCH38Percent",group.by = "Count")+labs(title = paste0(unique(seurat.list[[i]]$Count),"-after-2nd.QC"))
+  p3<-FeatureScatter(seurat.list[[i]], feature1 = "nCount_RNA", feature2 = "nFeature_RNA",group.by = "Count")+labs(title = paste0(unique(seurat.list[[i]]$Count),"-after-2nd.QC"))
+  show(ggarrange(p1,p2,p3,ncol=2,nrow = 2))
+  table<-seurat.list[[i]]@meta.data%>%dplyr::count(species)
+  tbl<-tableGrob(table,rows=NULL,theme=tt)
+  grid.arrange(ggplot(seurat.list[[i]]@meta.data,aes(x=Count, fill=species)) + geom_bar(position="fill")+
+                 scale_y_continuous(labels = scales::percent)+theme_bw()+theme(axis.text.x = element_text(hjust=1,angle=45)), tbl,ncol=2,as.table=TRUE,heights=c(2,1))
+}
 
-#We can create this table to check the number of remaining cells after our initial QC steps
-table<-seurat.object@meta.data%>%dplyr::count(species)
 
 
 #Preparing for multimodal reference mapping - Removing the "GRCh38-" gene prefix#####
