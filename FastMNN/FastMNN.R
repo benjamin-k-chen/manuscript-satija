@@ -109,12 +109,180 @@ DimPlot(seurat.list.act.tr.untr.MNN,group.by = "Condition",order = c("Acute","AR
 
 DimPlot(seurat.list.act.tr.untr.MNN,group.by = "Condition",order = c("Acute","ART treated","Uninfected"),pt.size = 0.5)+
   scale_color_manual(values = cond.cols,breaks = c("Acute","ART treated","Uninfected"))+NoLegend()
-  
+
+#####
+#Condition-Version-Acute
+cond.cols.acute <- c("Acute" = "#cb3e71","ART treated" ="white", "Uninfected" ="white")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "Condition",order = c("Acute","ART treated","Uninfected"),pt.size = 0.5)+
+  scale_color_manual(values = cond.cols.acute,breaks = c("Acute"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "Condition",order = c("Acute","ART treated","Uninfected"),pt.size = 0.5)+
+  scale_color_manual(values = cond.cols.acute,breaks = c("Acute"))+NoLegend()
+
+#Condition-Version-ART-treated
+cond.cols.treated <- c("Acute" = "white","ART treated" = "#243684", "Uninfected" ="white")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "Condition",order = c("ART treated","Acute","Uninfected"),pt.size = 0.5)+
+  scale_color_manual(values = cond.cols.treated,breaks = c("ART treated"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "Condition",order = c("ART treated","Acute","Uninfected"),pt.size = 0.5)+
+  scale_color_manual(values = cond.cols.treated,breaks = c("ART treated"))+NoLegend()
+
+#Condition-Version-Uninfected
+cond.cols.uninfected <- c("Acute" = "white","ART treated" = "white", "Uninfected" ="grey")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "Condition",order = c("Uninfected","ART treated","Acute"),pt.size = 0.5)+
+  scale_color_manual(values = cond.cols.uninfected,breaks = c("Uninfected"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "Condition",order = c("Uninfected","ART treated","Acute"),pt.size = 0.5)+
+  scale_color_manual(values = cond.cols.uninfected,breaks = c("Uninfected"))+NoLegend()
+########
 
 #MouseID
 DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",cols = mouse.cols,pt.size = 0.5)
 
 DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",cols = mouse.cols,pt.size = 0.5)+NoLegend()
+
+######
+#MouseID-Version-T1
+mouse.cols.alt <- c("T1" = "#9ebaf5",
+                    "T2" = "white",
+                    "T3" = "white",
+                    "A1" = "white",
+                    "A2" = "white",
+                    "A3" = "white",
+                    "A0" = "white",
+                    "U1" = "white",
+                    "U2" = "white")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("T1"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("T1"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("T1"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("T1"))+NoLegend()
+
+#MouseID-Version-T2
+mouse.cols.alt <- c("T1" = "white",
+                    "T2" = "#6d8cd4",
+                    "T3" = "white",
+                    "A1" = "white",
+                    "A2" = "white",
+                    "A3" = "white",
+                    "A0" = "white",
+                    "U1" = "white",
+                    "U2" = "white")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("T2"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("T2"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("T2"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("T2"))+NoLegend()
+
+#MouseID-Version-T3
+mouse.cols.alt <- c("T1" = "white",
+                    "T2" = "white",
+                    "T3" = "#1d2e68",
+                    "A1" = "white",
+                    "A2" = "white",
+                    "A3" = "white",
+                    "A0" = "white",
+                    "U1" = "white",
+                    "U2" = "white")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("T3"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("T3"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("T3"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("T3"))+NoLegend()
+
+#MouseID-Version-A1
+mouse.cols.alt <- c("T1" = "white",
+                    "T2" = "white",
+                    "T3" = "white",
+                    "A1" = "#ff1919",
+                    "A2" = "white",
+                    "A3" = "white",
+                    "A0" = "white",
+                    "U1" = "white",
+                    "U2" = "white")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("A1"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("A1"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("A1"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("A1"))+NoLegend()
+
+#MouseID-Version-A2
+mouse.cols.alt <- c("T1" = "white",
+                    "T2" = "white",
+                    "T3" = "white",
+                    "A1" = "white",
+                    "A2" = "#ff4d4d",
+                    "A3" = "white",
+                    "A0" = "white",
+                    "U1" = "white",
+                    "U2" = "white")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("A2"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("A2"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("A2"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("A2"))+NoLegend()
+
+#MouseID-Version-A3
+mouse.cols.alt <- c("T1" = "white",
+                    "T2" = "white",
+                    "T3" = "white",
+                    "A1" = "white",
+                    "A2" = "white",
+                    "A3" = "#ff8080",
+                    "A0" = "white",
+                    "U1" = "white",
+                    "U2" = "white")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("A3"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("A3"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("A3"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("A3"))+NoLegend()
+
+#MouseID-Version-U1
+mouse.cols.alt <- c("T1" = "white",
+                    "T2" = "white",
+                    "T3" = "white",
+                    "A1" = "white",
+                    "A2" = "white",
+                    "A3" = "white",
+                    "A0" = "white",
+                    "U1" = "#7c7c7c",
+                    "U2" = "white")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("U1"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("U1"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("U1"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("U1"))+NoLegend()
+
+#MouseID-Version-U1
+mouse.cols.alt <- c("T1" = "white",
+                    "T2" = "white",
+                    "T3" = "white",
+                    "A1" = "white",
+                    "A2" = "white",
+                    "A3" = "white",
+                    "A0" = "white",
+                    "U1" = "white",
+                    "U2" = "#bcbcbc")
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("U2"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("U2"))
+
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "MouseID",order = c("U2"),pt.size = 0.5)+
+  scale_color_manual(values = mouse.cols.alt,breaks = c("U2"))+NoLegend()
+
+######
+
 
 #HIV expression status
 DimPlot(seurat.list.act.tr.untr.MNN,group.by = "status",order = c("HIV+ high","HIV+ low","HIV-"),pt.size = 0.5)+
