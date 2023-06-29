@@ -21,7 +21,6 @@ library(scCustomize)
 #Load the .rds file
 seurat.list <-readRDS("seurat.list.pre.subset.rds")
 
-
 #Creating the plots
 #The list of individual markers can be found in Canonical-cellmakers.R
 for (i in 1:length(seurat.list)){
@@ -271,7 +270,6 @@ for (i in 1:length(seurat.list)){
          labs(caption = paste0(dplyr::first(unique(seurat.list[[i]]$Count))," - Cytotxic T-cell markers")))
   
 }
-
 
 #Based on expression of these canonical cellmarkers as well as the predicted.celltype we get a better understanding of the celltypes in each cluster
 #and can consider removal

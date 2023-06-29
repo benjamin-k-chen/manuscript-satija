@@ -77,7 +77,7 @@ for (i in 1:length(seurat.list)){
     theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
     scale_fill_manual(values = cell.cols,breaks = cell.order.rev)
   
-  #cerating the .l1 barplots (-> celltypes are ordered alphabetically)
+  #Creating the .l1 barplots (-> celltypes are ordered alphabetically)
   a2<-ggplot(seurat.list[[i]]@meta.data,aes(x=seurat_clusters, fill=predicted.celltype.l1))+
     geom_bar(position="fill")+
     scale_y_continuous(labels = scales::percent,expand=c(0,0))+
