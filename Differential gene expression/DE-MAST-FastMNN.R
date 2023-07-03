@@ -201,5 +201,119 @@ save.image("MAST-DE-FastMNN.RData")
 #Finish pdf###
 dev.off()
 
+#Acute vs. Uninfected Unmarked
+#We make a copy with only those that are fdr<0.05
+Acute.vs..Uninfected.Unmarked.FastMNN.MAST.markers$threshold <- ifelse(Acute.vs..Uninfected.Unmarked.FastMNN.MAST.markers$fdr < 0.05, "FDR < 0.05", "Not Sig")
+
+#
+Acute.vs..Uninfected.Unmarked.FastMNN.MAST.markers_sig<-subset.data.frame(Acute.vs..Uninfected.Unmarked.FastMNN.MAST.markers, threshold == "FDR < 0.05")
+
+#We make copies and only take the genes columns
+Acute.vs..Uninfected.Unmarked.FastMNN.MAST.markers_G<-subset.data.frame(Acute.vs..Uninfected.Unmarked.FastMNN.MAST.markers_sig,select = "X")
+
+
+#VolcanoPlot
+ggplot()+
+  geom_point(data = Acute.vs..Uninfected.Unmarked.FastMNN.MAST.markers, aes(x = avg_log2FC, y = -log10(fdr),color=threshold))+
+  scale_color_manual(values = c("red", "lightgray")) +
+  theme_bw(base_size = 12) + theme(legend.position = "bottom") +
+  ggtitle("Acute vs Uninfected-Unmarked FastMNN Volcano Plot") +
+  geom_text_repel(data = subset(Acute.vs..Uninfected.Unmarked.FastMNN.MAST.markers, threshold == "FDR < 0.05"),
+                  aes(label = X,x = avg_log2FC, y = -log10(fdr)),
+                  size = 3,max.overlaps = 20) 
+
+
+#Acute vs. Uninfected dsRed
+#We make a copy with only those that are fdr<0.05
+Acute.vs..Uninfected.dsRed.FastMNN.MAST.markers$threshold <- ifelse(Acute.vs..Uninfected.dsRed.FastMNN.MAST.markers$fdr < 0.05, "FDR < 0.05", "Not Sig")
+
+#
+Acute.vs..Uninfected.dsRed.FastMNN.MAST.markers_sig<-subset.data.frame(Acute.vs..Uninfected.dsRed.FastMNN.MAST.markers, threshold == "FDR < 0.05")
+
+#We make copies and only take the genes columns
+Acute.vs..Uninfected.dsRed.FastMNN.MAST.markers_G<-subset.data.frame(Acute.vs..Uninfected.dsRed.FastMNN.MAST.markers_sig,select = "X")
+
+
+#VolcanoPlot
+ggplot()+
+  geom_point(data = Acute.vs..Uninfected.dsRed.FastMNN.MAST.markers, aes(x = avg_log2FC, y = -log10(fdr),color=threshold))+
+  scale_color_manual(values = c("red", "lightgray")) +
+  theme_bw(base_size = 12) + theme(legend.position = "bottom") +
+  ggtitle("Acute vs Uninfected-dsRed FastMNN Volcano Plot") +
+  geom_text_repel(data = subset(Acute.vs..Uninfected.dsRed.FastMNN.MAST.markers, threshold == "FDR < 0.05"),
+                  aes(label = X,x = avg_log2FC, y = -log10(fdr)),
+                  size = 3,max.overlaps = 20) 
+
+
+
+#ART-Treated-vs.-Acute-FastMNN-MAST
+#We make a copy with only those that are fdr<0.05
+ART.Treated.vs..Acute.FastMNN.MAST.markers$threshold <- ifelse(ART.Treated.vs..Acute.FastMNN.MAST.markers$fdr < 0.05, "FDR < 0.05", "Not Sig")
+
+#
+ART.Treated.vs..Acute.FastMNN.MAST.markers_sig<-subset.data.frame(ART.Treated.vs..Acute.FastMNN.MAST.markers, threshold == "FDR < 0.05")
+
+#We make copies and only take the genes columns
+ART.Treated.vs..Acute.FastMNN.MAST.markers_G<-subset.data.frame(ART.Treated.vs..Acute.FastMNN.MAST.markers_sig,select = "X")
+
+
+#VolcanoPlot
+ggplot()+
+  geom_point(data = ART.Treated.vs..Acute.FastMNN.MAST.markers, aes(x = avg_log2FC, y = -log10(fdr),color=threshold))+
+  scale_color_manual(values = c("red", "lightgray")) +
+  theme_bw(base_size = 12) + theme(legend.position = "bottom") +
+  ggtitle("ART.Treated.vs..Acute.FastMNN FastMNN Volcano Plot") +
+  geom_text_repel(data = subset(ART.Treated.vs..Acute.FastMNN.MAST.markers, threshold == "FDR < 0.05"),
+                  aes(label = X,x = avg_log2FC, y = -log10(fdr)),
+                  size = 3,max.overlaps = 20) 
+
+
+#ART-Treated-vs.-Uninfected dsRed-FastMNN-MAST
+#We make a copy with only those that are fdr<0.05
+ART.Treated.vs..Uninfected.dsRed.FastMNN.MAST.markers$threshold <- ifelse(ART.Treated.vs..Uninfected.dsRed.FastMNN.MAST.markers$fdr < 0.05, "FDR < 0.05", "Not Sig")
+
+#
+ART.Treated.vs..Uninfected.dsRed.FastMNN.MAST.markers_sig<-subset.data.frame(ART.Treated.vs..Uninfected.dsRed.FastMNN.MAST.markers, threshold == "FDR < 0.05")
+
+#We make copies and only take the genes columns
+ART.Treated.vs..Uninfected.dsRed.FastMNN.MAST.markers_G<-subset.data.frame(ART.Treated.vs..Uninfected.dsRed.FastMNN.MAST.markers_sig,select = "X")
+
+
+#VolcanoPlot
+ggplot()+
+  geom_point(data = ART.Treated.vs..Uninfected.dsRed.FastMNN.MAST.markers, aes(x = avg_log2FC, y = -log10(fdr),color=threshold))+
+  scale_color_manual(values = c("red", "lightgray")) +
+  theme_bw(base_size = 12) + theme(legend.position = "bottom") +
+  ggtitle("ART.Treated.vs..Uninfected.dsRed.FastMNN FastMNN Volcano Plot") +
+  geom_text_repel(data = subset(ART.Treated.vs..Uninfected.dsRed.FastMNN.MAST.markers, threshold == "FDR < 0.05"),
+                  aes(label = X,x = avg_log2FC, y = -log10(fdr)),
+                  size = 3,max.overlaps = 20) 
+
+
+
+#ART-Treated-vs.-Uninfected Unmarked-FastMNN-MAST
+#We make a copy with only those that are fdr<0.05
+ART.Treated.vs..Uninfected.Unmarked.FastMNN.MAST.markers$threshold <- ifelse(ART.Treated.vs..Uninfected.Unmarked.FastMNN.MAST.markers$fdr < 0.05, "FDR < 0.05", "Not Sig")
+
+#
+ART.Treated.vs..Uninfected.Unmarked.FastMNN.MAST.markers_sig<-subset.data.frame(ART.Treated.vs..Uninfected.Unmarked.FastMNN.MAST.markers, threshold == "FDR < 0.05")
+
+#We make copies and only take the genes columns
+ART.Treated.vs..Uninfected.Unmarked.FastMNN.MAST.markers_G<-subset.data.frame(ART.Treated.vs..Uninfected.Unmarked.FastMNN.MAST.markers_sig,select = "X")
+
+
+#VolcanoPlot
+ggplot()+
+  geom_point(data = ART.Treated.vs..Uninfected.Unmarked.FastMNN.MAST.markers, aes(x = avg_log2FC, y = -log10(fdr),color=threshold))+
+  scale_color_manual(values = c("red", "lightgray")) +
+  theme_bw(base_size = 12) + theme(legend.position = "bottom") +
+  ggtitle("ART.Treated.vs..Uninfected.Unmarked.FastMNN FastMNN Volcano Plot") +
+  geom_text_repel(data = subset(ART.Treated.vs..Uninfected.Unmarked.FastMNN.MAST.markers, threshold == "FDR < 0.05"),
+                  aes(label = X,x = avg_log2FC, y = -log10(fdr)),
+                  size = 3,max.overlaps = 20) 
+
 
 ##END OF SCRIPT####
+
+
+
