@@ -138,13 +138,13 @@ ggplot(MetadataTableHIV2,aes(x=MouseID, fill=status)) + geom_bar(position = "fil
 ggplot(MetadataTableHIV2,aes(x=MouseID, fill=status,y=n)) + geom_bar(stat = "identity")+theme_bw()+
   theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
   scale_fill_manual(values = HIV.cols)+
-  geom_label(aes(label=after_stat(MetadataTableHIV2$n)),position = "stack",size=3,color="white")+
+  geom_label(aes(label=after_stat(MetadataTableHIV2$n)),position = "stack",size=3,color="black")+
   labs(title = "# of HIV+ cells by mouse", x = "MouseID", y = "# of cells")+NoLegend()
 
 ggplot(MetadataTableHIV3,aes(x=MouseID, fill=MouseID,y=n)) + geom_bar(stat = "identity")+theme_bw()+
   theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
   scale_fill_manual(values = mouse.cols)+
-  geom_label(aes(label=after_stat(MetadataTableHIV3$n)),position = "stack",size=3,color="white")+
+  geom_label(aes(label=after_stat(MetadataTableHIV3$n)),position = "stack",size=3,color="black")+
   labs(title = "# of HIV+ cells by mouse", x = "MouseID", y = "# of cells")+NoLegend()
 
 
