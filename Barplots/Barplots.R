@@ -127,13 +127,15 @@ for (i in 1:length(seurat.list)){
     scale_y_continuous(labels = scales::percent,expand=c(0,0))+theme_bw()+
     labs(fill="Fluorescence",y="% of cells",x="Cluster",caption = paste0(dplyr::first(seurat.list[[i]]$Count),"-final barplots"))+
     theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-    scale_fill_manual(values = fluor.cols)
+    scale_fill_manual(values = fluor.cols)+
+    coord_cartesian(ylim = c(0,0.05))
   
   o2<-ggplot(seurat.list[[i]]@meta.data,aes(x=predicted.celltype.l2, fill=Fluorescence)) + geom_bar(position="fill")+
     scale_y_continuous(labels = scales::percent,expand=c(0,0))+theme_bw()+
     labs(fill="Fluorescence",y="% of cells",x="predicted.celltype.l2",caption = paste0(dplyr::first(seurat.list[[i]]$Count),"-final barplots"))+
     theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-    scale_fill_manual(values = fluor.cols)
+    scale_fill_manual(values = fluor.cols)+
+    coord_cartesian(ylim = c(0,0.05))
   
   show(ggarrange(o1,o2,ncol=1,nrow = 2))
 }
