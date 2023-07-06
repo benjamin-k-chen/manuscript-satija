@@ -29,3 +29,29 @@ p4<-ggplot()+geom_bar(T1T2_CannonicalPathwaysShort,stat = "identity",mapping=aes
   theme_pubr()+labs(title = "IPA - Analysis - T1T2")+xlab("-log(p-value)")+ylab("")
 ggarrange(p1,p2,p3,p4,align = "hv")
 dev.off()
+
+###Heatmaps based on Comparison analysis results from IPA
+#Export the tables directly from IPA and import into R
+
+pdf("Alternative_IPA_Comparison_analysis.pdf",width = 20)
+
+PathwaysPValue<-Satija_Acute_vs_Treated_pvalue$`Canonical Pathways`[1:15]
+P1<-ggplot(data = Satija_Acute_vs_Treated_pvalue, aes(y = `Canonical Pathways`, x = Mouse)) +
+  geom_tile(aes(fill = p_value)) +
+  scale_x_discrete(position = "top")+
+  ylim(rev(PathwaysPValue))+
+  scale_fill_gradient2(high = "purple",low = "lightgrey",mid = "white",na.value = "#e5e5e5")+
+  theme_minimal()
+
+
+PathwaysZScore<-Satija_Acute_vs_Treated_zscore$`Canonical Pathways`[1:15]
+P2<-ggplot(data = Satija_Acute_vs_Treated_zscore, aes(y = `Canonical Pathways`, x = Mouse)) +
+  geom_tile(aes(fill = z_score)) +
+  scale_x_discrete(position = "top")+
+  ylim(rev(PathwaysZScore))+
+  scale_fill_gradient2(high = "orange",low = "blue",mid = "white",na.value = "#e5e5e5")+
+  theme_minimal()
+
+ggarrange(P1,P2,align = "hv")
+
+dev.off()
