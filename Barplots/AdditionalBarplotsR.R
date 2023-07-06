@@ -168,9 +168,14 @@ for(i in 1:length(seurat.list)) {
 
 HIVTable<-HIVTable[HIVTable$Status!="HIV-",]#From that gerenated table we take out all HIV transcript (-) cells
 
-ggplot(data=HIVTable,aes(x=n_hivpos_umi))+
-  geom_density()+
-  scale_x_log10()+theme_bw()
+ggplot(data=HIVTable,aes(x=n_hivpos_umi,fill=""))+
+  geom_density(show.legend = FALSE)+scale_fill_manual(values =c("lightgrey"))+geom_vline(xintercept = 10,linetype="dashed")+
+  scale_x_log10()+theme_bw()+xlab(label = "# of HIV umis")
+
+ggplot(data=HIVTable,aes(x=n_hivpos_umi,fill=Status))+
+  geom_histogram(show.legend = FALSE,binwidth = 0.05)+scale_fill_manual(values =HIV.cols)+geom_vline(xintercept = 10,linetype="dashed")+
+  scale_x_log10()+theme_bw()+xlab(label = "# of HIV umis")
+
 
 #Finishing the pdf
 dev.off()
