@@ -329,9 +329,9 @@ cell_hivstat2 <- tibble(n_hivpos_umi = Matrix::colSums(seurat.list.act.tr.untr.M
 cell_hivstat2<-cell_hivstat2%>%
   arrange(Status)
 ggplot(cell_hivstat2, aes(n_hivpos_umi, n_hivneg_umi, color = Status,shape=MouseID)) +
-  geom_point()+scale_x_log10()+scale_y_log10()+labs(title = "HIV+ vs. HIV- UMIs")+
+  geom_point(size=3)+scale_x_log10()+scale_y_log10()+labs(title = "HIV+ vs. HIV- UMIs")+
   scale_color_manual(values = HIV.cols,breaks = c("HIV+ high","HIV+ low","HIV-"))+
-  theme_bw()
+  theme_bw(base_size = 20)
 
 #Finishing pdf
 dev.off()
