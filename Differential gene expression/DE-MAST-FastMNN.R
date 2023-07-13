@@ -100,7 +100,7 @@ show(EnhancedVolcano(Acute.HIV.high.vs.Acute.HIV.neg.markers,
                      title = "Acute HIv+ high vs. Acute HIV-",caption = "fdr cutoff = 0.05",
                      pCutoffCol = "fdr",pCutoff=0.05,FCcutoff = 0,col = Volc.cols,cutoffLineType = "blank",legendLabels = Volc.labels))
 
-write.csv(Acute.HIV.high.vs.Acute.HIV.neg.markers,file = paste0(OutPath,"Acute-HIV-high-vs.-Acute-HIV-neg-FastMNN-MAST-markers.csv"))
+write.csv(Acute.HIV.high.vs.Acute.HIV.neg.markers,file = paste0(OutPath,"/Acute-HIV-high-vs.-Acute-HIV-neg-FastMNN-MAST-markers.csv"))
 
 #HIV+ high Acute vs. Uninfected (dsRed + Unmarked)
 HIV.high.Acute.Cells <- extracted.cells[which(extracted.cells$Condition == "Acute" & extracted.cells$status == "HIV+ high"),]$id
@@ -126,7 +126,7 @@ show(EnhancedVolcano(Acute.HIV.high.vs.Uninfected.markers,
                      title = "Acute HIV+ high vs. Uninfected",caption = "fdr cutoff = 0.05",
                      pCutoffCol = "fdr",pCutoff=0.05,FCcutoff = 0,col = Volc.cols,cutoffLineType = "blank",legendLabels = Volc.labels))
 
-write.csv(Acute.HIV.high.vs.Uninfected.markers,file = paste0(OutPath,"Acute-HIV-high-vs.-Uninfected-FastMNN-MAST-markers.csv"))
+write.csv(Acute.HIV.high.vs.Uninfected.markers,file = paste0(OutPath,"/Acute-HIV-high-vs.-Uninfected-FastMNN-MAST-markers.csv"))
 
 
 #Treated vs. Acute
@@ -176,7 +176,7 @@ show(EnhancedVolcano(Uninfected.dsRed.Cells.vs.ARTTreated.markers,
                      title = "ART Treated vs. Uninfected-dsRed",caption = "fdr cutoff = 0.05",
                      pCutoffCol = "fdr",pCutoff=0.05,FCcutoff = 0,col = Volc.cols,cutoffLineType = "blank",legendLabels = Volc.labels))
 
-write.csv(Uninfected.dsRed.Cells.vs.ARTTreated.markers,file = paste0(OutPath,"ART-Treated-vs.-Uninfected-dsRed-FastMNN-MAST-markers.csv"))
+write.csv(Uninfected.dsRed.Cells.vs.ARTTreated.markers,file = paste0(OutPath,"/ART-Treated-vs.-Uninfected-dsRed-FastMNN-MAST-markers.csv"))
 
 
 #Treated vs. Uninfected Unmarked
@@ -218,7 +218,7 @@ show(EnhancedVolcano(Uninfected.Unmarked.Cells.vs.Acute.markers,
                      title = "Acute vs. Uninfected-Unmarked",caption = "fdr cutoff = 0.05",
                      pCutoffCol = "fdr",pCutoff=0.05,FCcutoff = 0,col = Volc.cols,cutoffLineType = "blank",legendLabels = Volc.labels))
 
-write.csv(Uninfected.Unmarked.Cells.vs.Acute.markers,file = paste0(OutPath,"Acute-vs.-Uninfected-Unmarked-FastMNN-MAST-markers.csv"))
+write.csv(Uninfected.Unmarked.Cells.vs.Acute.markers,file = paste0(OutPath,"/Acute-vs.-Uninfected-Unmarked-FastMNN-MAST-markers.csv"))
 
 
 #Acute vs. Uninfected Unmarked
@@ -238,7 +238,7 @@ show(EnhancedVolcano(Uninfected.dsRed.Cells.vs.Acute.markers,
                      title = "Acute vs. Uninfected-dsRed",caption = "fdr cutoff = 0.05",
                      pCutoffCol = "fdr",pCutoff=0.05,FCcutoff = 0,col = Volc.cols,cutoffLineType = "blank",legendLabels = Volc.labels))
 
-write.csv(Uninfected.dsRed.Cells.vs.Acute.markers,file = paste0(OutPath,"Acute-vs.-Uninfected-dsRed-FastMNN-MAST-markers.csv"))
+write.csv(Uninfected.dsRed.Cells.vs.Acute.markers,file = paste0(OutPath,"/Acute-vs.-Uninfected-dsRed-FastMNN-MAST-markers.csv"))
 
 #HIV+ high vs Uninfected Unmarked
 HIVhigh.Acute.Cells <- extracted.cells[which(extracted.cells$Condition2 == "Acute" & extracted.cells$status == "HIV+ high" ),]$id
