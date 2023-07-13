@@ -76,6 +76,58 @@ extracted.cells <- FetchData(object = seurat.object, vars = c('orig.ident', "Cou
 extracted.cells$id <- rownames(extracted.cells)
   
 
+#HIV+ high Acute vs. HIV- Acute
+HIV.high.Acute.Cells <- extracted.cells[which(extracted.cells$Condition == "Acute" & extracted.cells$status == "HIV+ high"),]$id
+seurat.object <- SetIdent(object = seurat.object, cells = HIV.high.Acute.Cells  ,value = "Acute HIV+ high")
+
+HIV.neg.Acute.Cells <- extracted.cells[which(extracted.cells$Condition == "Acute" & extracted.cells$status == "HIV-"),]$id
+seurat.object <- SetIdent(object = seurat.object, cells = HIV.neg.Acute.Cells  ,value = "Acute HIV-")
+
+
+
+Acute.HIV.high.vs.Acute.HIV.neg.markers<-FindMarkers(seurat.object, ident.1 = "Acute HIV+ high", ident.2 = "Acute HIV-",test.use = "MAST", min.pct = 0.1, min.cells.group=1,logfc.threshold=0,  pseudocount.use= 0.001, random.seed = 12, latent.vars="nFeature_RNA")
+Acute.HIV.high.vs.Acute.HIV.neg.markers = Acute.HIV.high.vs.Acute.HIV.neg.markers[ !(rownames(Acute.HIV.high.vs.Acute.HIV.neg.markers) %in% featuresHIV), ]
+
+mousegenes<-rownames(Acute.HIV.high.vs.Acute.HIV.neg.markers)
+mousegenes<-str_subset(mousegenes,pattern = "mm10*")
+Acute.HIV.high.vs.Acute.HIV.neg.markers = Acute.HIV.high.vs.Acute.HIV.neg.markers[ !(rownames(Acute.HIV.high.vs.Acute.HIV.neg.markers) %in% mousegenes),]
+Acute.HIV.high.vs.Acute.HIV.neg.markers$fdr <- p.adjust(Acute.HIV.high.vs.Acute.HIV.neg.markers$p_val, method = "fdr", n = length(Acute.HIV.high.vs.Acute.HIV.neg.markers$p_val))
+
+show(EnhancedVolcano(Acute.HIV.high.vs.Acute.HIV.neg.markers, 
+                     lab=rownames(Acute.HIV.high.vs.Acute.HIV.neg.markers),
+                     x ="avg_log2FC", 
+                     y ="p_val",subtitle = paste0("Acute HIV+ high n=",nrow(extracted.cells[which(extracted.cells$Condition == "Acute" & extracted.cells$status == "HIV+ high"),])," vs. Acute HIV- n=",nrow(extracted.cells[which(extracted.cells$Condition == "Acute" & extracted.cells$status == "HIV-"),])),
+                     title = "Acute HIv+ high vs. Acute HIV-",caption = "fdr cutoff = 0.05",
+                     pCutoffCol = "fdr",pCutoff=0.05,FCcutoff = 0,col = Volc.cols,cutoffLineType = "blank",legendLabels = Volc.labels))
+
+write.csv(Acute.HIV.high.vs.Acute.HIV.neg.markers,file = paste0(OutPath,"Acute-HIV-high-vs.-Acute-HIV-neg-FastMNN-MAST-markers.csv"))
+
+#HIV+ high Acute vs. Uninfected (dsRed + Unmarked)
+HIV.high.Acute.Cells <- extracted.cells[which(extracted.cells$Condition == "Acute" & extracted.cells$status == "HIV+ high"),]$id
+seurat.object <- SetIdent(object = seurat.object, cells = HIV.high.Acute.Cells  ,value = "Acute HIV+ high")
+
+Uninfected.Cells <- extracted.cells[which(extracted.cells$Condition == "Uninfected"),]$id
+seurat.object <- SetIdent(object = seurat.object, cells = Uninfected.Cells  ,value = "Uninfected")
+
+
+
+Acute.HIV.high.vs.Uninfected.markers<-FindMarkers(seurat.object, ident.1 = "Acute HIV+ high", ident.2 = "Uninfected",test.use = "MAST", min.pct = 0.1, min.cells.group=1,logfc.threshold=0,  pseudocount.use= 0.001, random.seed = 12, latent.vars="nFeature_RNA")
+Acute.HIV.high.vs.Uninfected.markers = Acute.HIV.high.vs.Uninfected.markers[ !(rownames(Acute.HIV.high.vs.Uninfected.markers) %in% featuresHIV), ]
+
+mousegenes<-rownames(Acute.HIV.high.vs.Uninfected.markers)
+mousegenes<-str_subset(mousegenes,pattern = "mm10*")
+Acute.HIV.high.vs.Uninfected.markers = Acute.HIV.high.vs.Uninfected.markers[ !(rownames(Acute.HIV.high.vs.Uninfected.markers) %in% mousegenes),]
+Acute.HIV.high.vs.Uninfected.markers$fdr <- p.adjust(Acute.HIV.high.vs.Uninfected.markers$p_val, method = "fdr", n = length(Acute.HIV.high.vs.Uninfected.markers$p_val))
+
+show(EnhancedVolcano(Acute.HIV.high.vs.Uninfected.markers, 
+                     lab=rownames(Acute.HIV.high.vs.Uninfected.markers),
+                     x ="avg_log2FC", 
+                     y ="p_val",subtitle = paste0("Acute HIV+ high n=",nrow(extracted.cells[which(extracted.cells$Condition == "Acute" & extracted.cells$status == "HIV+ high"),])," vs. Uninfected n=",nrow(extracted.cells[which(extracted.cells$Condition == "Uninfected"),])),
+                     title = "Acute HIV+ high vs. Uninfected",caption = "fdr cutoff = 0.05",
+                     pCutoffCol = "fdr",pCutoff=0.05,FCcutoff = 0,col = Volc.cols,cutoffLineType = "blank",legendLabels = Volc.labels))
+
+write.csv(Acute.HIV.high.vs.Uninfected.markers,file = paste0(OutPath,"Acute-HIV-high-vs.-Uninfected-FastMNN-MAST-markers.csv"))
+
 
 #Treated vs. Acute
 Treated.Cells <- extracted.cells[which(extracted.cells$Condition == "ART Treated"),]$id
@@ -188,11 +240,47 @@ show(EnhancedVolcano(Uninfected.dsRed.Cells.vs.Acute.markers,
 
 write.csv(Uninfected.dsRed.Cells.vs.Acute.markers,file = paste0(OutPath,"Acute-vs.-Uninfected-dsRed-FastMNN-MAST-markers.csv"))
 
-
-##Alternatives
-#HIV+ high vs. Uninfected dsRed
-
 #HIV+ high vs Uninfected Unmarked
+HIVhigh.Acute.Cells <- extracted.cells[which(extracted.cells$Condition2 == "Acute" & extracted.cells$status == "HIV+ high" ),]$id
+seurat.object <- SetIdent(object = seurat.object, cells = HIVhigh.Acute.Cells  ,value = "HIV+ high Acute")
+
+Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers<-FindMarkers(seurat.object, ident.1 = "HIV+ high Acute", ident.2 = "Uninfected-Unmarked",test.use = "MAST", min.pct = 0.1, min.cells.group=1,logfc.threshold=0,  pseudocount.use= 0.001, random.seed = 12, latent.vars="nFeature_RNA")
+Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers = Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers[ !(rownames(Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers) %in% featuresHIV), ]
+
+mousegenes<-rownames(Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers)
+mousegenes<-str_subset(mousegenes,pattern = "mm10*")
+Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers = Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers[ !(rownames(Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers) %in% mousegenes),]
+Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers$fdr <- p.adjust(Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers$p_val, method = "fdr", n = length(Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers$p_val))
+
+show(EnhancedVolcano(Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers, 
+                     lab=rownames(Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers),
+                     x ="avg_log2FC", 
+                     y ="p_val",subtitle = paste0("HIV+ high Acute n=",nrow(extracted.cells[which(extracted.cells$Condition2 == "Acute" & extracted.cells$status == "HIV+ high"),])," vs. Uninfected Unmarked n=",nrow(extracted.cells[which(extracted.cells$Condition2 %in% c("Uninfected-Unmarked")),])),
+                     title = "HIV+ high Acute vs. Uninfected-Unmarked",caption = "fdr cutoff = 0.05",
+                     pCutoffCol = "fdr",pCutoff=0.05,FCcutoff = 0,col = Volc.cols,cutoffLineType = "blank",legendLabels = Volc.labels))
+
+write.csv(Uninfected.Unmarked.Cells.vs.HIVhighAcute.markers,file = paste0(OutPath,"/HIVhighAcute-vs.-Uninfected-Unmarked-FastMNN-MAST-markers.csv"))
+
+#HIV+ high vs Uninfected dsRed
+HIVhigh.Acute.Cells <- extracted.cells[which(extracted.cells$Condition2 == "Acute" & extracted.cells$status == "HIV+ high" ),]$id
+seurat.object <- SetIdent(object = seurat.object, cells = HIVhigh.Acute.Cells  ,value = "HIV+ high Acute")
+
+Uninfected.dsRed.Cells.vs.HIVhighAcute.markers<-FindMarkers(seurat.object, ident.1 = "HIV+ high Acute", ident.2 = "Uninfected-dsRed",test.use = "MAST", min.pct = 0.1, min.cells.group=1,logfc.threshold=0,  pseudocount.use= 0.001, random.seed = 12, latent.vars="nFeature_RNA")
+Uninfected.dsRed.Cells.vs.HIVhighAcute.markers = Uninfected.dsRed.Cells.vs.HIVhighAcute.markers[ !(rownames(Uninfected.dsRed.Cells.vs.HIVhighAcute.markers) %in% featuresHIV), ]
+
+mousegenes<-rownames(Uninfected.dsRed.Cells.vs.HIVhighAcute.markers)
+mousegenes<-str_subset(mousegenes,pattern = "mm10*")
+Uninfected.dsRed.Cells.vs.HIVhighAcute.markers = Uninfected.dsRed.Cells.vs.HIVhighAcute.markers[ !(rownames(Uninfected.dsRed.Cells.vs.HIVhighAcute.markers) %in% mousegenes),]
+Uninfected.dsRed.Cells.vs.HIVhighAcute.markers$fdr <- p.adjust(Uninfected.dsRed.Cells.vs.HIVhighAcute.markers$p_val, method = "fdr", n = length(Uninfected.dsRed.Cells.vs.HIVhighAcute.markers$p_val))
+
+show(EnhancedVolcano(Uninfected.dsRed.Cells.vs.HIVhighAcute.markers, 
+                     lab=rownames(Uninfected.dsRed.Cells.vs.HIVhighAcute.markers),
+                     x ="avg_log2FC", 
+                     y ="p_val",subtitle = paste0("HIV+ high Acute n=",nrow(extracted.cells[which(extracted.cells$Condition2 == "Acute" & extracted.cells$status == "HIV+ high"),])," vs. Uninfected dsRed n=",nrow(extracted.cells[which(extracted.cells$Condition2 %in% c("Uninfected-dsRed")),])),
+                     title = "HIV+ high Acute vs. Uninfected-dsRed",caption = "fdr cutoff = 0.05",
+                     pCutoffCol = "fdr",pCutoff=0.05,FCcutoff = 0,col = Volc.cols,cutoffLineType = "blank",legendLabels = Volc.labels))
+
+write.csv(Uninfected.dsRed.Cells.vs.HIVhighAcute.markers,file = paste0(OutPath,"/HIVhighAcute-vs.-Uninfected-dsRed-FastMNN-MAST-markers.csv"))
 
 
 #Save of the R workspace#####
