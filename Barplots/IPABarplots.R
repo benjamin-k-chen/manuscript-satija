@@ -55,3 +55,25 @@ P2<-ggplot(data = Satija_Acute_vs_Treated_zscore, aes(y = `Canonical Pathways`, 
 ggarrange(P1,P2,align = "hv")
 
 dev.off()
+
+
+
+
+
+#Barplots using Enrichr Results
+
+
+pdf("Enrichr_pvalue_barplots.pdf",width = 10)
+E1<-ggplot()+geom_bar(T1T2_Enrichr,stat = "identity",mapping=aes(x=-log(`P-value`),y=reorder(Pathways,-log(`P-value`)),fill=-log(`P-value`)))+
+  scale_fill_gradient2(high = "maroon",limits=c(0,30))+
+  theme_pubr()+labs(title = "Enrichr - Analysis - T1T2")+xlab("-log(p-value)")+ylab("")
+
+E2<-ggplot()+geom_bar(A3_Enrichr,stat = "identity",mapping=aes(x=-log(`P-value`),y=reorder(Pathways,-log(`P-value`)),fill=-log(`P-value`)))+
+  scale_fill_gradient2(high = "maroon",limits=c(0,30))+
+  theme_pubr()+labs(title = "Enrichr - Analysis - A3 Acute")+xlab("-log(p-value)")+ylab("")
+ggarrange(E1,E2,align = "hv",ncol = 1)
+dev.off()
+
+
+
+
