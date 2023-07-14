@@ -14,7 +14,7 @@ library(ggrepel)
 #
 #
 #Create the pdf
-pdf("VolcanoPlotsAdjusted.pdf")
+pdf("VolcanoPlots.pdf")
 #
 #We first load the .csv files for all three acute datasets (HIV+ high vs. HIV-)
 MAST_297 <- read.table('HIVhighpos-vs.-HIVneg-297_count-MAST-markers.csv', header = TRUE, sep = ',', stringsAsFactors = FALSE)
