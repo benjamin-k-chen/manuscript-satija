@@ -14,7 +14,7 @@ library(ggrepel)
 #
 #
 #Create the pdf
-pdf("VolcanoPlots.pdf")
+pdf("VolcanoPlotsAdjusted.pdf")
 #
 #We first load the .csv files for all three acute datasets (HIV+ high vs. HIV-)
 MAST_297 <- read.table('HIVhighpos-vs.-HIVneg-297_count-MAST-markers.csv', header = TRUE, sep = ',', stringsAsFactors = FALSE)
@@ -63,6 +63,7 @@ ggplot(MAST_297, aes(x = avg_log2FC, y = -log10(fdr))) +
   scale_color_manual(values = c("red", "blue","lightgray")) +
   theme_bw(base_size = 12) + theme(legend.position = "bottom") +
   ggtitle("A1 15dpi HIV+ High vs HIV- Volcano Plot") +
+  coord_cartesian(xlim = c(-4,4))+
   geom_text_repel(data = subset(MAST_297, vplot == "FDR < 0.05 in all three"),
     aes(label = Gene),size = 3,box.padding = unit(0.1, "lines"),point.padding = unit(0.1, "lines")) 
 
@@ -82,6 +83,7 @@ ggplot(MAST_618, aes(x = avg_log2FC, y = -log10(fdr))) +
   scale_color_manual(values = c("red", "blue","lightgray")) +
   theme_bw(base_size = 12) + theme(legend.position = "bottom") +
   ggtitle("A2 15dpi HIV+ High vs HIV- Volcano Plot") +
+  coord_cartesian(xlim = c(-5,5))+
   geom_text_repel(
     data = subset(MAST_618, vplot == "FDR < 0.05 in all three"),
     aes(label = Gene),
@@ -104,6 +106,7 @@ ggplot(MAST_620, aes(x = avg_log2FC, y = -log10(fdr))) +
   scale_color_manual(values = c("red", "blue","lightgray")) +
   theme_bw(base_size = 12) + theme(legend.position = "bottom") +
   ggtitle("A3 15dpi HIV+ High vs HIV- Volcano Plot") +
+  coord_cartesian(xlim = c(-5,5))+
   geom_text_repel(
     data = subset(MAST_620, vplot == "FDR < 0.05 in all three"),
     aes(label = Gene),
@@ -166,6 +169,7 @@ ggplot()+
   scale_color_manual(values = c("red", "darkgreen", "lightgray")) +
   theme_bw(base_size = 12) + theme(legend.position = "bottom") +
   ggtitle("T1/T2 10dpt/29dpt GFP vs dsRed Volcano Plot") +
+  coord_cartesian(xlim = c(-9,9))+
   geom_text_repel(data = subset(MAST_368_GFP, vplot == "FDR < 0.05 in all three"),
                   aes(label = Gene,x = avg_log2FC, y = -log10(fdr)),
                   size = 3,max.overlaps = 20
