@@ -21,7 +21,6 @@ seurat.list.act.tr.untr<-Merge_Seurat_List(seurat.list)
 #SCT normalize the merged SeuratObject
 seurat.list.act.tr.untr<-SCTransform(seurat.list.act.tr.untr)
 
-
 #Defining variables needed for UMAP
 featuresUCOERG<- c("dsRed", "EGFP", "WPRE" )
 featuresHIV<- c("gag-pol","pol","pol-vif-vpr-tat-rev","vpu-env","env","mirfp670nano","p2a-cre-ires-nef" )
@@ -64,13 +63,14 @@ cell.order<-c("CD4 Others",
 cell.order.rev<-rev(cell.order)
 
 #Perform FastMNN####
-
-test.features <- VariableFeatures(seurat)
+test.features <- VariableFeatures(seurat.list.act.tr.untr)
 test.features <- setdiff(test.features,featuresHIV)
 mouse.genes<-str_subset(test.features,pattern = "mm10")
 test.features <- setdiff(test.features,mouse.genes)
 test.features <- setdiff(test.features,featuresUCOERG)
 
+#Create range of resolutions for Clustree
+resolution.range <- seq(from = 0, to = 1, by = 0.1)
 
 #Before we can run FastMNN we need to modify the function however, since this version does not
 #function with SCT-normalized datasets
@@ -83,9 +83,19 @@ trace('RunFastMNN', edit = T)
 
 #Now we can run the function adn subsequent UMAP
 
-seurat.list.act.tr.untr.MNN <- RunFastMNN(object.list = SplitObject(seurat.list.act.tr.untr,split.by = "Count"), features=test.features)
+seurat.list.act.tr.untr.MNN2 <- RunFastMNN(object.list = SplitObject(seurat.list.act.tr.untr,split.by = "Count"), features=test.features)
+seurat.list.act.tr.untr.MNN2 <- RunUMAP(seurat.list.act.tr.untr.MNN2,dims = 1:30,reduction = "mnn")
+seurat.list.act.tr.untr.MNN3 <- FindNeighbors(seurat.list.act.tr.untr.MNN3,dims = 1:30)
 
-seurat.list.act.tr.untr.MNN <- RunUMAP(seurat.list.act.tr.untr.MNN,dims = 1:30,reduction = "mnn")
+#Clustree
+seurat.list.act.tr.untr.MNN3 <- FindClusters(seurat.list.act.tr.untr.MNN3,resolution = resolution.range) 
+show(clustree(seurat.list.act.tr.untr.MNN2, prefix = "SCT_snn_res."))
+#
+
+
+seurat.list.act.tr.untr.MNN2 <- FindClusters(seurat.list[[i]],resolution = unique(seurat.info$datasetsClusterRes2)) 
+
+
 
 
 #We get a table with the predicted celltype abundance to use in the order of plotting in the UMAP
@@ -335,5 +345,26 @@ ggplot(cell_hivstat2, aes(n_hivpos_umi, n_hivneg_umi, color = Status,shape=Mouse
 
 #Finishing pdf
 dev.off()
+
+##Barplots with HIV+ cell throughout seurat clusters
+pdf("Barplots-FastMNN.pdf")
+h1<-ggplot(seurat.list.act.tr.untr.MNN@meta.data,aes(x=predicted.celltype.l2, fill=status)) + geom_bar(position="fill")+
+  scale_y_continuous(labels = scales::percent,expand=c(0,0))+
+  theme_bw()+
+  labs(fill="HIV status",y="% of cells",x="predicted.celltypes.l2",caption="FastMNN - final barplots")+
+  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+  scale_fill_manual(values = HIV.cols,breaks = c("HIV+ high","HIV+ low","HIV-"))+
+  coord_cartesian(ylim = c(0,0.05))
+
+h2<-ggplot(seurat.list.act.tr.untr.MNN@meta.data,aes(x=predicted.celltype.l2, fill=status)) + geom_bar(position="fill")+
+  scale_y_continuous(labels = scales::percent,expand=c(0,0))+
+  theme_bw()+
+  labs(fill="HIV status",y="% of cells",x="predicted.celltypes.l2",caption="FastMNN - final barplots")+
+  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+  scale_fill_manual(values = HIV.cols,breaks = c("HIV+ high","HIV+ low","HIV-"))+
+  coord_cartesian(ylim = c(0,0.25))
+show(ggarrange(h1,h2,ncol=1,nrow = 2))
+dev.off()
+
 
 #END OF SCRIPT####
