@@ -83,20 +83,10 @@ trace('RunFastMNN', edit = T)
 
 #Now we can run the function adn subsequent UMAP
 
-seurat.list.act.tr.untr.MNN2 <- RunFastMNN(object.list = SplitObject(seurat.list.act.tr.untr,split.by = "Count"), features=test.features)
-seurat.list.act.tr.untr.MNN2 <- RunUMAP(seurat.list.act.tr.untr.MNN2,dims = 1:30,reduction = "mnn")
-seurat.list.act.tr.untr.MNN3 <- FindNeighbors(seurat.list.act.tr.untr.MNN3,dims = 1:30)
-
-#Clustree
-seurat.list.act.tr.untr.MNN3 <- FindClusters(seurat.list.act.tr.untr.MNN3,resolution = resolution.range) 
-show(clustree(seurat.list.act.tr.untr.MNN2, prefix = "SCT_snn_res."))
-#
-
-
-seurat.list.act.tr.untr.MNN2 <- FindClusters(seurat.list[[i]],resolution = unique(seurat.info$datasetsClusterRes2)) 
-
-
-
+seurat.list.act.tr.untr.MNN <- RunFastMNN(object.list = SplitObject(seurat.list.act.tr.untr,split.by = "Count"), features=test.features)
+seurat.list.act.tr.untr.MNN <- RunUMAP(seurat.list.act.tr.untr.MNN,dims = 1:30,reduction = "mnn")
+seurat.list.act.tr.untr.MNN <- FindNeighbors(seurat.list.act.tr.untr.MNN,dims = 1:30)
+seurat.list.act.tr.untr.MNN <- FindClusters(seurat.list.act.tr.untr.MNN,resolution = 0.5) 
 
 #We get a table with the predicted celltype abundance to use in the order of plotting in the UMAP
 
@@ -356,14 +346,43 @@ h1<-ggplot(seurat.list.act.tr.untr.MNN@meta.data,aes(x=predicted.celltype.l2, fi
   scale_fill_manual(values = HIV.cols,breaks = c("HIV+ high","HIV+ low","HIV-"))+
   coord_cartesian(ylim = c(0,0.05))
 
-h2<-ggplot(seurat.list.act.tr.untr.MNN@meta.data,aes(x=predicted.celltype.l2, fill=status)) + geom_bar(position="fill")+
+h2<-ggplot(seurat.list.act.tr.untr.MNN@meta.data,aes(x=seurat_clusters, fill=status)) + geom_bar(position="fill")+
   scale_y_continuous(labels = scales::percent,expand=c(0,0))+
   theme_bw()+
   labs(fill="HIV status",y="% of cells",x="predicted.celltypes.l2",caption="FastMNN - final barplots")+
   theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
   scale_fill_manual(values = HIV.cols,breaks = c("HIV+ high","HIV+ low","HIV-"))+
-  coord_cartesian(ylim = c(0,0.25))
+  coord_cartesian(ylim = c(0,0.10))
 show(ggarrange(h1,h2,ncol=1,nrow = 2))
+
+h1<-ggplot(seurat.list.act.tr.untr.MNN@meta.data,aes(x=predicted.celltype.l2, fill=Condition)) + geom_bar(position="fill")+
+  scale_y_continuous(labels = scales::percent,expand=c(0,0))+
+  theme_bw()+
+  labs(fill="Condition",y="% of cells",x="predicted.celltypes.l2",caption="FastMNN - final barplots")+
+  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+  scale_fill_manual(values = cond.cols)
+
+h2<-ggplot(seurat.list.act.tr.untr.MNN@meta.data,aes(x=seurat_clusters, fill=Condition)) + geom_bar(position="fill")+
+  scale_y_continuous(labels = scales::percent,expand=c(0,0))+
+  theme_bw()+
+  labs(fill="Condition",y="% of cells",x="Cluster",caption="FastMNN - final barplots")+
+  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+  scale_fill_manual(values = cond.cols)
+show(ggarrange(h1,h2,ncol=1,nrow = 2))
+
+o1<-ggplot(seurat.list.act.tr.untr.MNN@meta.data,aes(x=seurat_clusters, fill=Fluorescence))+geom_bar(position="fill")+
+  scale_y_continuous(labels = scales::percent,expand=c(0,0))+theme_bw()+
+  labs(fill="Fluorescence",y="% of cells",x="Cluster",caption = "FastMNN - final barplots")+
+  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+  scale_fill_manual(values = fluor.cols)
+
+o2<-ggplot(seurat.list.act.tr.untr.MNN@meta.data,aes(x=predicted.celltype.l2, fill=Fluorescence)) + geom_bar(position="fill")+
+  scale_y_continuous(labels = scales::percent,expand=c(0,0))+theme_bw()+
+  labs(fill="Fluorescence",y="% of cells",x="predicted.celltype.l2",caption = "FastMNN - final barplots")+
+  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
+  scale_fill_manual(values = fluor.cols)
+
+show(ggarrange(o1,o2,ncol=1,nrow = 2))
 dev.off()
 
 
