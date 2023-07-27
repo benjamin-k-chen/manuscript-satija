@@ -309,6 +309,10 @@ DimPlot(seurat.list.act.tr.untr.MNN,group.by = "Doublet.Singlet",pt.size = 0.5,o
 DimPlot(seurat.list.act.tr.untr.MNN,group.by = "Doublet.Singlet",pt.size = 0.5,order = c("Doublet","Singlet"),cols = c("Doublet"="darkblue","Singlet"="lightgrey"))+
   NoLegend()
 
+#LentiRg
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "LentiRG.expression",pt.size = 0.5,order = c("LentiRG","No expression"),cols = c("LentiRG"="#A9341B","No expression"="lightgrey"))
+DimPlot(seurat.list.act.tr.untr.MNN,group.by = "LentiRG.expression",pt.size = 0.5,order = c("LentiRG","No expression"),cols = c("LentiRG"="#A9341B","No expression"="lightgrey"))+
+  NoLegend()
 
 
 ##Combined UMI plot
