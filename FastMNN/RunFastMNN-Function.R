@@ -9,7 +9,7 @@
 #replace line 25-28
 # objects.sce <- lapply(X = object.list, FUN = function(x,f) { if (DefaultAssay(x) == 'SCT') { x = subset(x = x, features = f) indx <- match(rownames(x@assays$SCT@counts),rownames(x@assays$SCT@scale.data)) x@assays$SCT@scale.data <- x@assays$SCT@scale.data[indx,] }else{ x = subset(x = x, features = f) } return(as.SingleCellExperiment(x)) }, f = features)
 
-RunFastMNN2<-function (object.list, assay = NULL, features = 2000, reduction.name = "mnn", 
+RunFastMNN<-function (object.list, assay = NULL, features = 2000, reduction.name = "mnn", 
                        reduction.key = "mnn_", reconstructed.assay = "mnn.reconstructed", 
                        verbose = TRUE, ...) 
 {
