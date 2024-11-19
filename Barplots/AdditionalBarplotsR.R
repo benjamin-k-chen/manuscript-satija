@@ -85,49 +85,9 @@ AddHIVTable<-data.frame(c("T2","T3","U1","U2"),c("HIV+ high","HIV+ low","HIV+ hi
 AddHIVTable<-`colnames<-`(AddHIVTable,c("MouseID","status","n"))
 MetadataTableHIV2<-rbind(MetadataTableHIV2,AddHIVTable)
 
-
-MetadataTableHIV3<-MetadataTableHIV%>%group_by(MouseID)%>%dplyr::count(MouseID)
-AddHIVTable2<-data.frame(c("T2","T3","U1","U2"),0)#Adding values for these mice manually
-AddHIVTable2<-`colnames<-`(AddHIVTable2,c("MouseID","n"))
-MetadataTableHIV3<-rbind(MetadataTableHIV3,AddHIVTable2)
-
+#Fig.4E
 #Creating Plots in a combined pdf format
 pdf("AdditionalBarplots.pdf")
-
-ggplot(MetadataTable,aes(x=MouseID, fill=MouseID)) + geom_bar()+theme_bw()+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  scale_fill_manual(values = mouse.cols)+
-  labs(title = "# of cell by mouse", x = "MouseID", y = "# of cells")+NoLegend()
-
-ggplot(MetadataTable,aes(x=MouseID, fill=MouseID)) + geom_bar()+theme_bw()+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  scale_fill_manual(values = mouse.cols)+
-  geom_label(aes(label=after_stat(MetadataTable2$n)),position = "stack",stat='count',size=2)+
-  labs(title = "# of cell by mouse", x = "MouseID", y = "# of cells")+NoLegend()
-
-ggplot(MetadataTable,aes(x=MouseID, fill=Count)) + geom_bar()+theme_bw()+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  labs(title = "# of cell by mouse", x = "MouseID", y = "# of cells")
-
-
-ggplot(MetadataTable,aes(x=Count, fill=Count)) + geom_bar()+theme_bw()+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  labs(title = "# of cell by dataset", x = "Dataset", y = "# of cells")+NoLegend()
-
-ggplot(MetadataTable,aes(x=Count, fill=Count)) + geom_bar()+theme_bw()+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  geom_label(aes(label=after_stat(MetadataTable3$n)),position = "stack",stat='count',size=2)+
-  labs(title = "# of cell by mouse", x = "Dataset", y = "# of cells")+NoLegend()
-
-ggplot(MetadataTable,aes(x=MouseID, fill=Fluorescence)) + geom_bar()+theme_bw()+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  scale_fill_manual(values = fluor.cols)+
-  labs(title = "# of cell by dataset", x = "MouseID", y = "# of cells")+NoLegend()
-
-ggplot(MetadataTable,aes(x=Count, fill=Fluorescence)) + geom_bar()+theme_bw()+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  scale_fill_manual(values = fluor.cols)+
-  labs(title = "# of cell by dataset", x = "Dataset", y = "# of cells")+NoLegend()
 
 ggplot(MetadataTableHIV2,aes(x=MouseID, fill=status)) + geom_bar(position = "fill")+theme_bw()+
   theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
@@ -146,36 +106,6 @@ ggplot(MetadataTableHIV3,aes(x=MouseID, fill=MouseID,y=n)) + geom_bar(stat = "id
   scale_fill_manual(values = mouse.cols)+
   geom_label(aes(label=after_stat(MetadataTableHIV3$n)),position = "stack",size=3,color="black")+
   labs(title = "# of HIV+ cells by mouse", x = "MouseID", y = "# of cells")+NoLegend()
-
-
-#Alternative to HIVumi scatterplot (Fig.04B) - DensityPlot
-
-HIVTable<-tibble()
-
-for(i in 1:length(seurat.list)) {
-  gene_HIV2 <- ifelse(str_detect(rownames(seurat.list[[i]]@assays$RNA),"gag-pol|^pol|pol-vif-vpr-tat-rev|vpu-env|env|p2a-cre-ires-nef"),"HIV+", "HIV-")
-  hivpos_inds2 <- gene_HIV2 == "HIV+"
-  hivneg_inds2 <- gene_HIV2 == "HIV-"
-  cell_hivstat2 <- tibble(n_hivpos_umi = Matrix::colSums(seurat.list[[i]]@assays$RNA[hivpos_inds2,]),
-                          n_hivneg_umi = Matrix::colSums(seurat.list[[i]]@assays$RNA[hivneg_inds2,]),
-                          tot_umi = Matrix::colSums(seurat.list[[i]]@assays$RNA),
-                          Status = seurat.list[[i]]$status,
-                          Count = seurat.list[[i]]$Count,
-                          Mean_hivpos_umi = base::mean(n_hivpos_umi))
-  #Final Bind
-  HIVTable <- rbind(HIVTable, cell_hivstat2)
-}
-
-HIVTable<-HIVTable[HIVTable$Status!="HIV-",]#From that gerenated table we take out all HIV transcript (-) cells
-
-ggplot(data=HIVTable,aes(x=n_hivpos_umi,fill=""))+
-  geom_density(show.legend = FALSE)+scale_fill_manual(values =c("lightgrey"))+geom_vline(xintercept = 10,linetype="dashed")+
-  scale_x_log10()+theme_bw()+xlab(label = "# of HIV umis")
-
-ggplot(data=HIVTable,aes(x=n_hivpos_umi,fill=Status))+
-  geom_histogram(show.legend = FALSE,binwidth = 0.05)+scale_fill_manual(values =HIV.cols)+geom_vline(xintercept = 10,linetype="dashed")+
-  scale_x_log10()+theme_bw()+xlab(label = "# of HIV umis")
-
 
 #Finishing the pdf
 dev.off()

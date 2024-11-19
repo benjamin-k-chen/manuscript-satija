@@ -20,7 +20,7 @@ library(ggpubr)
 HIV.cols <- c('HIV-'='lightgrey','HIV+ low'="#ffd8b1",'HIV+ high'= "purple",'HIV+ very high'="purple")
 fluor.cols <- c('Unmarked'='lightgrey','Mixed'='orange','dsRed'='#f5eaea','GFP'='darkgreen')
 
-#Figure 4H - FastMNN with all mice (A1-3,T1-3,U1-2)#######
+#Figure 3H - FastMNN with all mice (A1-3,T1-3,U1-2)#######
 
 cell.orders<-c("Proliferating CD4",
                "Th1 Proliferating CD4",
@@ -80,7 +80,7 @@ TableA<-`rownames<-`(TableA,c("Th1/Th17 TEM",
 TableA_fisher<-fisher_test(TableA,simulate.p.value = TRUE)
 
 #Fishers Exact Test - Post hoc pairwise
-pairwisetest_Fig4H<-pairwise_fisher_test(x=TableA,p.adjust.method="bonferroni")
+pairwisetest_Fig3H<-pairwise_fisher_test(x=TableA,p.adjust.method="bonferroni")
 
 #Comparing each cluster to the overall average
 
@@ -122,7 +122,7 @@ b<-ggplot(seurat.list.act.mtr.untr.MNN.clusters@meta.data,aes(x=seurat_clusters,
 
 ####Create heatmaps to visualize pairwise results
 
-c<-ggplot(pairwisetest_Fig4H,
+c<-ggplot(pairwisetest_Fig3H,
        aes(group1, group2))+ # x and y axes => Var1 and Var2
   geom_tile(aes(fill = p.adj))+ # background colours are mapped according to the value column
   geom_text(aes(label = p.adj),size=2)+ # write the values
@@ -130,10 +130,10 @@ c<-ggplot(pairwisetest_Fig4H,
                        mid = "white",
                        high = "white",
                        midpoint=0.05,
-                       limits=c(min(pairwisetest_Fig4H$p.adj),max(pairwisetest_Fig4H$p.adj)),
+                       limits=c(min(pairwisetest_Fig3H$p.adj),max(pairwisetest_Fig3H$p.adj)),
                        trans="log") + # determine the colour
-  scale_x_discrete(limits=unique(pairwisetest_Fig4H$group1),name="")+
-  scale_y_discrete(limits=unique(pairwisetest_Fig4H$group2),name="")+
+  scale_x_discrete(limits=unique(pairwisetest_Fig3H$group1),name="")+
+  scale_y_discrete(limits=unique(pairwisetest_Fig3H$group2),name="")+
   NoLegend()+
   theme(panel.grid.major.x=element_blank(), 
         panel.grid.minor.x=element_blank(), 
@@ -143,7 +143,7 @@ c<-ggplot(pairwisetest_Fig4H,
         axis.text.x = element_text(angle=45, hjust = 1,vjust=1,size = 8),
         axis.text.y = element_text(size = 8))
 
-d<-ggplot(pairwisetest_Fig4H,
+d<-ggplot(pairwisetest_Fig3H,
        aes(group1, group2))+ # x and y axes => Var1 and Var2
   geom_tile(aes(fill = p.adj.signif))+ # background colours are mapped according to the value column
   geom_text(aes(label = p.adj.signif))+ # write the values
@@ -152,8 +152,8 @@ d<-ggplot(pairwisetest_Fig4H,
                              "**"="orange",
                              "*"="lightyellow",
                              "ns" = "white"))+ # determine the colour
-  scale_x_discrete(limits=unique(pairwisetest_Fig4H$group1),name="")+
-  scale_y_discrete(limits=unique(pairwisetest_Fig4H$group2),name="")+
+  scale_x_discrete(limits=unique(pairwisetest_Fig3H$group1),name="")+
+  scale_y_discrete(limits=unique(pairwisetest_Fig3H$group2),name="")+
   NoLegend()+
   theme(panel.grid.major.x=element_blank(), 
         panel.grid.minor.x=element_blank(), 
@@ -163,19 +163,13 @@ d<-ggplot(pairwisetest_Fig4H,
         axis.text.x = element_text(angle=45, hjust = 1,vjust=1,size = 8),
         axis.text.y = element_text(size = 8))
 
-pdf("Statistics_Fig4H.pdf",height = 14)
+pdf("Statistics_Fig3H.pdf",height = 14)
 ggarrange(a,b,ncol = 1,nrow = 2)
 ggarrange(c,d,ncol = 1,nrow = 2)
 dev.off()
 
 
-
-
-
-
-
-
-#Figure S.Fig4D - FastMNN with all mice (A1-3,T1-3,U1-2)-predicted celltype#######
+#Figure S.Fig4C - FastMNN with all mice (A1-3,T1-3,U1-2)-predicted celltype#######
 
 #Let's extract the numbers of cells HIV-/HIV+ using cluster designations
 
@@ -297,7 +291,7 @@ dev.off()
 
 
 
-#Figure 5E - FastMNN with all acute mice (A1-3)#######
+#Figure 4G - FastMNN with all acute mice (A1-3)#######
 
 cell.orders<-c("Proliferating CD4",
                "Th1 Proliferating CD4",
@@ -352,7 +346,7 @@ TableC<-`rownames<-`(TableC,HIVneg.table$seurat_clusters_types)
 TableC_fisher<-fisher_test(TableC,simulate.p.value = TRUE)
 
 #Fishers Exact Test - Post hoc pairwise
-pairwisetest_Fig5E<-pairwise_fisher_test(x=TableC,p.adjust.method="bonferroni")
+pairwisetest_Fig3H<-pairwise_fisher_test(x=TableC,p.adjust.method="bonferroni")
 
 #Comparing each cluster to the overall average
 
@@ -394,7 +388,7 @@ b<-ggplot(seurat.list.act.MNN3@meta.data,aes(x=seurat_clusters, fill=status))+
 
 ####Create heatmaps to visualize pairwise results
 
-c<-ggplot(pairwisetest_Fig5E,
+c<-ggplot(pairwisetest_Fig3H,
           aes(group1, group2))+ # x and y axes => Var1 and Var2
   geom_tile(aes(fill = p.adj))+ # background colours are mapped according to the value column
   geom_text(aes(label = p.adj),size=2)+ # write the values
@@ -402,10 +396,10 @@ c<-ggplot(pairwisetest_Fig5E,
                        mid = "white",
                        high = "white",
                        midpoint=0.05,
-                       limits=c(min(pairwisetest_Fig5E$p.adj),max(pairwisetest_Fig5E$p.adj)),
+                       limits=c(min(pairwisetest_Fig3H$p.adj),max(pairwisetest_Fig3H$p.adj)),
                        trans="log") + # determine the colour
-  scale_x_discrete(limits=unique(pairwisetest_Fig5E$group1),name="")+
-  scale_y_discrete(limits=unique(pairwisetest_Fig5E$group2),name="")+
+  scale_x_discrete(limits=unique(pairwisetest_Fig3H$group1),name="")+
+  scale_y_discrete(limits=unique(pairwisetest_Fig3H$group2),name="")+
   NoLegend()+
   theme(panel.grid.major.x=element_blank(), 
         panel.grid.minor.x=element_blank(), 
@@ -415,7 +409,7 @@ c<-ggplot(pairwisetest_Fig5E,
         axis.text.x = element_text(angle=45, hjust = 1,vjust=1,size = 8),
         axis.text.y = element_text(size = 8))
 
-d<-ggplot(pairwisetest_Fig5E,
+d<-ggplot(pairwisetest_Fig3H,
           aes(group1, group2))+ # x and y axes => Var1 and Var2
   geom_tile(aes(fill = p.adj.signif))+ # background colours are mapped according to the value column
   geom_text(aes(label = p.adj.signif))+ # write the values
@@ -424,8 +418,8 @@ d<-ggplot(pairwisetest_Fig5E,
                              "**"="orange",
                              "*"="lightyellow",
                              "ns" = "white"))+ # determine the colour
-  scale_x_discrete(limits=unique(pairwisetest_Fig5E$group1),name="")+
-  scale_y_discrete(limits=unique(pairwisetest_Fig5E$group2),name="")+
+  scale_x_discrete(limits=unique(pairwisetest_Fig3H$group1),name="")+
+  scale_y_discrete(limits=unique(pairwisetest_Fig3H$group2),name="")+
   NoLegend()+
   theme(panel.grid.major.x=element_blank(), 
         panel.grid.minor.x=element_blank(), 
@@ -435,7 +429,7 @@ d<-ggplot(pairwisetest_Fig5E,
         axis.text.x = element_text(angle=45, hjust = 1,vjust=1,size = 8),
         axis.text.y = element_text(size = 8))
 
-pdf("Statistics_Fig5E.pdf",height = 14)
+pdf("Statistics_Fig4G.pdf",height = 14)
 ggarrange(a,b,ncol = 1,nrow = 2)
 ggarrange(c,d,ncol = 1,nrow = 2)
 dev.off()
@@ -446,126 +440,7 @@ dev.off()
 
 
 
-
-
-
-#Figure 5F - FastMNN with all acute mice (A1-3) - predicted cell type#######
-
-#Let's extract the numbers of cells HIV-/HIV+ using cluster designations
-
-total_vector<-seurat.list.act.MNN3@meta.data%>%
-  group_by(predicted.celltype.l2)%>%
-  dplyr::count(status=="HIV-")
-
-HIVpos.table<-total_vector[total_vector$`status == "HIV-"`=="FALSE",]
-HIVneg.table<-total_vector[total_vector$`status == "HIV-"`=="TRUE",]
-
-total_vector1<-seurat.list.act.MNN3@meta.data%>%
-  group_by(predicted.celltype.l2)%>%
-  dplyr::count(predicted.celltype.l2)
-
-TableD <- data.frame(
-  HIVpos=c(total_vector1$n-HIVneg.table$n),#Sucesses
-  HIVneg=HIVneg.table$n#Failures
-)
-
-#Unfortunately I'm using a version of the seurat object which doesn't have the final cluster desigantions so I'll add them manually
-TableD<-`rownames<-`(TableD,HIVneg.table$predicted.celltype.l2)
-
-##Lets do the Fisher's Exact Test
-
-#Fishers Exact Test
-TableD_fisher<-fisher_test(TableD,simulate.p.value = TRUE)
-
-#Fishers Exact Test - Post hoc pairwise
-pairwisetest_Fig5F<-pairwise_fisher_test(x=TableD,p.adjust.method="bonferroni")
-
-#Comparing each cluster to the overall average
-
-TableD_results<-tibble()
-for(i in 1:nrow(TableD)) {
-  TableD_Total<-data_frame(HIVpos=sum(TableD$HIVpos),HIVneg=sum(TableD$HIVneg))
-  if (TableD$HIVpos[i]>1){
-    print("Doing Fishers exact test")
-    TableD1<-TableD[i,]
-    TableD1<-rbind(TableD1,TableD_Total)
-    res<-pairwise_fisher_test(TableD1,p.adjust.method = "bonferroni")
-    print(res)
-    TableD_results<-rbind(TableD_results,res)
-  }
-  else{
-    print("No HIV+ -> skip")
-  }
-}
-
-####Create two barplot versions
-a<-ggplot(seurat.list.act.MNN3@meta.data,aes(x=predicted.celltype.l2, fill=status))+
-  geom_bar(position="fill")+
-  geom_hline(yintercept = TableD_Total$HIVpos/(TableD_Total$HIVneg+TableD_Total$HIVpos), color="darkgrey",linetype=2)+
-  scale_y_continuous(labels = scales::percent,expand=c(0,0))+
-  theme_bw()+
-  labs(fill="HIV status",y="% of cells",x="")+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  scale_fill_manual(values = HIV.cols,breaks = c("HIV+ high","HIV+ low","HIV-"))+
-  coord_cartesian(ylim = c(0,0.1))
-
-b<-ggplot(seurat.list.act.MNN3@meta.data,aes(x=predicted.celltype.l2, fill=status))+
-  geom_bar(stat ="count",position="stack")+
-  theme_bw()+
-  labs(fill="HIV status",y="# of cells",x="")+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  scale_fill_manual(values = HIV.cols,breaks = c("HIV+ high","HIV+ low","HIV-"))
-
-####Create heatmaps to visualize pairwise results
-
-c<-ggplot(pairwisetest_Fig5F,
-          aes(group1, group2))+ # x and y axes => Var1 and Var2
-  geom_tile(aes(fill = p.adj))+ # background colours are mapped according to the value column
-  geom_text(aes(label = p.adj),size=2)+ # write the values
-  scale_fill_gradient2(low = "darkred",
-                       mid = "white",
-                       high = "white",
-                       midpoint=0.05,
-                       limits=c(min(pairwisetest_Fig5F$p.adj),max(pairwisetest_Fig5F$p.adj)),
-                       trans="log") + # determine the colour
-  scale_x_discrete(limits=unique(pairwisetest_Fig5F$group1),name="")+
-  scale_y_discrete(limits=unique(pairwisetest_Fig5F$group2),name="")+
-  NoLegend()+
-  theme(panel.grid.major.x=element_blank(), 
-        panel.grid.minor.x=element_blank(), 
-        panel.grid.major.y=element_blank(), 
-        panel.grid.minor.y=element_blank(),
-        panel.background=element_rect(fill="white"),
-        axis.text.x = element_text(angle=45, hjust = 1,vjust=1,size = 8),
-        axis.text.y = element_text(size = 8))
-
-d<-ggplot(pairwisetest_Fig5F,
-          aes(group1, group2))+ # x and y axes => Var1 and Var2
-  geom_tile(aes(fill = p.adj.signif))+ # background colours are mapped according to the value column
-  geom_text(aes(label = p.adj.signif))+ # write the values
-  scale_fill_manual(values=c("****" = "darkred",
-                             "***" = "red",
-                             "**"="orange",
-                             "*"="lightyellow",
-                             "ns" = "white"))+ # determine the colour
-  scale_x_discrete(limits=unique(pairwisetest_Fig5F$group1),name="")+
-  scale_y_discrete(limits=unique(pairwisetest_Fig5F$group2),name="")+
-  NoLegend()+
-  theme(panel.grid.major.x=element_blank(), 
-        panel.grid.minor.x=element_blank(), 
-        panel.grid.major.y=element_blank(), 
-        panel.grid.minor.y=element_blank(),
-        panel.background=element_rect(fill="white"),
-        axis.text.x = element_text(angle=45, hjust = 1,vjust=1,size = 8),
-        axis.text.y = element_text(size = 8))
-
-pdf("Statistics_Fig5F.pdf",height = 14)
-ggarrange(a,b,ncol = 1,nrow = 2)
-ggarrange(c,d,ncol = 1,nrow = 2)
-dev.off()
-
-
-#Figure 6E - Dataset with treated mice (T1/2)#######
+#Figure 4I - Dataset with treated mice (T1/2)#######
 
 seurat_treated2 <- FindClusters(seurat_treated,resolution = 0.5) 
 seurat_treated2$seurat_clusters2<-case_when(seurat_treated2$seurat_clusters==0 ~ "Tfh-like CD4",
@@ -614,7 +489,7 @@ TableE<-`rownames<-`(TableE,dsRed.table$seurat_clusters2)
 TableE_fisher<-fisher_test(TableE,simulate.p.value = TRUE)
 
 #Fishers Exact Test - Post hoc pairwise
-pairwisetest_Fig6E<-pairwise_fisher_test(x=TableE,p.adjust.method="bonferroni")
+pairwisetest_Fig4I<-pairwise_fisher_test(x=TableE,p.adjust.method="bonferroni")
 
 #Comparing each cluster to the overall average
 
@@ -657,7 +532,7 @@ b<-ggplot(seurat_treated2@meta.data,aes(x=seurat_clusters2, fill=Fluorescence))+
 
 ####Create heatmaps to visualize pairwise results
 
-c<-ggplot(pairwisetest_Fig6E,
+c<-ggplot(pairwisetest_Fig4I,
           aes(group1, group2))+ # x and y axes => Var1 and Var2
   geom_tile(aes(fill = p.adj))+ # background colours are mapped according to the value column
   geom_text(aes(label = p.adj),size=2)+ # write the values
@@ -665,10 +540,10 @@ c<-ggplot(pairwisetest_Fig6E,
                        mid = "white",
                        high = "white",
                        midpoint=0.05,
-                       limits=c(min(pairwisetest_Fig6E$p.adj),max(pairwisetest_Fig6E$p.adj)),
+                       limits=c(min(pairwisetest_Fig4I$p.adj),max(pairwisetest_Fig4I$p.adj)),
                        trans="log") + # determine the colour
-  scale_x_discrete(limits=unique(pairwisetest_Fig6E$group1),name="")+
-  scale_y_discrete(limits=unique(pairwisetest_Fig6E$group2),name="")+
+  scale_x_discrete(limits=unique(pairwisetest_Fig4I$group1),name="")+
+  scale_y_discrete(limits=unique(pairwisetest_Fig4I$group2),name="")+
   NoLegend()+
   theme(panel.grid.major.x=element_blank(), 
         panel.grid.minor.x=element_blank(), 
@@ -678,7 +553,7 @@ c<-ggplot(pairwisetest_Fig6E,
         axis.text.x = element_text(angle=45, hjust = 1,vjust=1,size = 8),
         axis.text.y = element_text(size = 8))
 
-d<-ggplot(pairwisetest_Fig6E,
+d<-ggplot(pairwisetest_Fig4I,
           aes(group1, group2))+ # x and y axes => Var1 and Var2
   geom_tile(aes(fill = p.adj.signif))+ # background colours are mapped according to the value column
   geom_text(aes(label = p.adj.signif))+ # write the values
@@ -687,8 +562,8 @@ d<-ggplot(pairwisetest_Fig6E,
                              "**"="orange",
                              "*"="lightyellow",
                              "ns" = "white"))+ # determine the colour
-  scale_x_discrete(limits=unique(pairwisetest_Fig6E$group1),name="")+
-  scale_y_discrete(limits=unique(pairwisetest_Fig6E$group2),name="")+
+  scale_x_discrete(limits=unique(pairwisetest_Fig4I$group1),name="")+
+  scale_y_discrete(limits=unique(pairwisetest_Fig4I$group2),name="")+
   NoLegend()+
   theme(panel.grid.major.x=element_blank(), 
         panel.grid.minor.x=element_blank(), 
@@ -704,121 +579,5 @@ ggarrange(c,d,ncol = 1,nrow = 2)
 dev.off()
 
 
-
-#Figure 6F - Dataset with treated mice (T1/2) - preduicted cell type#######
-
-#Let's extract the numbers of cells dsRed/GFP using cluster designations
-
-total_vector<-seurat_treated2@meta.data%>%
-  group_by(predicted.celltype.l2)%>%
-  dplyr::count(Fluorescence=="dsRed")
-
-GFP.table<-total_vector[total_vector$`Fluorescence == "dsRed"`=="FALSE",]
-dsRed.table<-total_vector[total_vector$`Fluorescence == "dsRed"`=="TRUE",]
-
-total_vector1<-seurat_treated2@meta.data%>%
-  group_by(predicted.celltype.l2)%>%
-  dplyr::count(predicted.celltype.l2)
-
-TableF <- data.frame(
-  GFP=c(total_vector1$n-dsRed.table$n),#Sucesses
-  dsRed=dsRed.table$n#Failures
-)
-
-#Unfortunately I'm using a version of the seurat object which doesn't have the final cluster desigantions so I'll add them manually
-TableF<-`rownames<-`(TableF,dsRed.table$predicted.celltype.l2)
-
-##Lets do the Fisher's Exact Test
-
-#Fishers Exact Test
-TableF_fisher<-fisher_test(TableF,simulate.p.value = TRUE)
-
-#Fishers Exact Test - Post hoc pairwise
-pairwisetest_Fig6F<-pairwise_fisher_test(x=TableF,p.adjust.method="bonferroni")
-
-#Comparing each cluster to the overall average
-
-TableF_results<-tibble()
-for(i in 1:nrow(TableF)) {
-  TableF_Total<-data_frame(GFP=sum(TableF$GFP),dsRed=sum(TableF$dsRed))
-  if (TableF$GFP[i]>1){
-    print("Doing Fishers exact test")
-    TableF1<-TableF[i,]
-    TableF1<-rbind(TableF1,TableF_Total)
-    res<-pairwise_fisher_test(TableF1,p.adjust.method = "bonferroni")
-    print(res)
-    TableF_results<-rbind(TableF_results,res)
-  }
-  else{
-    print("No GFP -> skip")
-  }
-}
-
-####Create two barplot versions
-a<-ggplot(seurat_treated2@meta.data,aes(x=predicted.celltype.l2, fill=Fluorescence))+
-  geom_bar(position="fill")+
-  geom_hline(yintercept = TableF_Total$GFP/(TableF_Total$dsRed+TableF_Total$GFP), color="darkgrey",linetype=2)+
-  scale_y_continuous(labels = scales::percent,expand=c(0,0))+
-  theme_bw()+
-  labs(fill="Fluorescence",y="% of cells",x="")+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  scale_fill_manual(values = fluor.cols)+
-  coord_cartesian(ylim = c(0,0.05))
-
-
-b<-ggplot(seurat_treated2@meta.data,aes(x=predicted.celltype.l2, fill=Fluorescence))+
-  geom_bar(stat = "count",position="stack")+
-  theme_bw()+
-  labs(fill="Fluorescence",y="# of cells",x="")+
-  theme(axis.text.x = element_text(hjust=1,angle=45),legend.key.size = unit(0.1, 'cm'))+
-  scale_fill_manual(values = fluor.cols)
-
-####Create heatmaps to visualize pairwise results
-
-c<-ggplot(pairwisetest_Fig6F,
-          aes(group1, group2))+ # x and y axes => Var1 and Var2
-  geom_tile(aes(fill = p.adj))+ # background colours are mapped according to the value column
-  geom_text(aes(label = p.adj),size=2)+ # write the values
-  scale_fill_gradient2(low = "darkred",
-                       mid = "white",
-                       high = "white",
-                       midpoint=0.05,
-                       limits=c(min(pairwisetest_Fig6F$p.adj),max(pairwisetest_Fig6F$p.adj)),
-                       trans="log") + # determine the colour
-  scale_x_discrete(limits=unique(pairwisetest_Fig6F$group1),name="")+
-  scale_y_discrete(limits=unique(pairwisetest_Fig6F$group2),name="")+
-  NoLegend()+
-  theme(panel.grid.major.x=element_blank(), 
-        panel.grid.minor.x=element_blank(), 
-        panel.grid.major.y=element_blank(), 
-        panel.grid.minor.y=element_blank(),
-        panel.background=element_rect(fill="white"),
-        axis.text.x = element_text(angle=45, hjust = 1,vjust=1,size = 8),
-        axis.text.y = element_text(size = 8))
-
-d<-ggplot(pairwisetest_Fig6F,
-          aes(group1, group2))+ # x and y axes => Var1 and Var2
-  geom_tile(aes(fill = p.adj.signif))+ # background colours are mapped according to the value column
-  geom_text(aes(label = p.adj.signif))+ # write the values
-  scale_fill_manual(values=c("****" = "darkred",
-                             "***" = "red",
-                             "**"="orange",
-                             "*"="lightyellow",
-                             "ns" = "white"))+ # determine the colour
-  scale_x_discrete(limits=unique(pairwisetest_Fig6F$group1),name="")+
-  scale_y_discrete(limits=unique(pairwisetest_Fig6F$group2),name="")+
-  NoLegend()+
-  theme(panel.grid.major.x=element_blank(), 
-        panel.grid.minor.x=element_blank(), 
-        panel.grid.major.y=element_blank(), 
-        panel.grid.minor.y=element_blank(),
-        panel.background=element_rect(fill="white"),
-        axis.text.x = element_text(angle=45, hjust = 1,vjust=1,size = 8),
-        axis.text.y = element_text(size = 8))
-
-pdf("Statistics_Fig6F - .pdf",height = 14)
-ggarrange(a,b,ncol = 1,nrow = 2)
-ggarrange(c,d,ncol = 1,nrow = 2)
-dev.off()
 
 
